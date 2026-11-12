@@ -164,15 +164,52 @@
   }
   #playerScreen.active { display: flex; }
 
+  /* ============================================================
+     ВЕРХНЯЯ ПАНЕЛЬ (Назад и Смена вида)
+     ============================================================ */
   .player-top { 
     flex-shrink: 0; 
-    padding: 5px 20px 0 20px;
+    padding: 15px 20px 0 20px;
     display: flex; 
     align-items: center; 
+    justify-content: space-between;
     z-index: 10;
   }
-  .icon-btn-back { background: none; border: none; color: var(--text); cursor: pointer; padding: 10px; margin-left: -10px; display: flex; align-items: center; justify-content: center; }
-  .icon-btn-back svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  
+  .icon-box-btn {
+    width: 48px;
+    height: 48px;
+    background: #252525;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 
+      -6px -6px 12px rgba(255, 255, 255, 0.12), 
+      6px 6px 15px rgba(0, 0, 0, 1),
+      inset 0 2px 2px rgba(255, 255, 255, 0.15);
+    transition: all 0.2s ease;
+    color: var(--text);
+  }
+
+  .icon-box-btn:active {
+    box-shadow: 
+      inset -6px -6px 12px rgba(255, 255, 255, 0.08),
+      inset 6px 6px 15px rgba(0, 0, 0, 1);
+    transform: scale(0.94);
+  }
+
+  .icon-box-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));
+  }
 
   .player-center {
     flex: 1; 
@@ -259,31 +296,82 @@
     background: rgba(255,255,255,0.15); color: var(--text); border-color: rgba(255,255,255,0.3);
   }
 
+  /* ============================================================
+     МАКСИМАЛЬНО КОНТРАСТНЫЙ ДИЗАЙН КНОПОК (ПЛЕЕР)
+     ============================================================ */
   .player-controls {
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; max-width: 360px; margin: 0 auto;
-    gap: 4px;
+    gap: 8px;
+    padding: 10px 0;
   }
   
-  .speed-btn, .chapter-btn {
-    background: none; border: none; color: var(--text); cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    width: 40px; height: 44px; opacity: 0.8; transition: opacity 0.2s;
-    flex-shrink: 0;
+  .speed-btn, .chapter-btn, .play-btn {
+    background: #252525;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 
+      -6px -6px 12px rgba(255, 255, 255, 0.12), 
+      6px 6px 15px rgba(0, 0, 0, 1),
+      inset 0 2px 2px rgba(255, 255, 255, 0.15);
+    transition: all 0.2s ease;
+    color: var(--text);
   }
-  .chapter-btn svg { width: 22px; height: 22px; fill: currentColor; }
-  .chapter-btn:active, .speed-btn:active { opacity: 0.5; }
-  .chapter-btn:disabled { opacity: 0.2; }
+
+  .speed-btn:active, .chapter-btn:active, .play-btn:active {
+    box-shadow: 
+      inset -6px -6px 12px rgba(255, 255, 255, 0.08),
+      inset 6px 6px 15px rgba(0, 0, 0, 1);
+    transform: scale(0.94);
+  }
+
+  .chapter-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .chapter-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    filter: drop-shadow(0 0 3px rgba(255,255,255,0.4));
+  }
+  .chapter-btn:disabled {
+    opacity: 0.2;
+    box-shadow: none;
+  }
+
+  .speed-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    font-weight: 600;
+  }
 
   .play-btn {
-    width: 64px; height: 64px; border-radius: 50%;
-    background: #e0e0e0; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 15px rgba(255,255,255,0.1); transition: transform 0.1s;
-    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+    background: #ffffff;
+    color: #121212;
+    box-shadow: 
+      -8px -8px 20px rgba(255, 255, 255, 0.15), 
+      8px 8px 20px rgba(0, 0, 0, 1),
+      inset 0 3px 4px rgba(255, 255, 255, 1),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.3);
   }
-  .play-btn:active { transform: scale(0.95); }
-  .play-btn svg { width: 28px; height: 28px; fill: #121212; }
+  .play-btn svg {
+    width: 34px;
+    height: 34px;
+    fill: currentColor;
+  }
+  .play-btn:active {
+    box-shadow: 
+      inset -8px -8px 15px rgba(255, 255, 255, 0.3),
+      inset 8px 8px 20px rgba(0, 0, 0, 0.9);
+  }
 
   #fileInput, #log { display: none; }
 
@@ -366,7 +454,7 @@
      ВАРИАНТЫ ВЁРСТКИ
      ============================================================ */
 
-  /* Вариант 2: Компактный */
+  /* Вариант 2: Текст */
   #playerScreen.layout-compact .player-center {
     flex-direction: row;
     align-items: flex-start;
@@ -416,9 +504,6 @@
         <svg viewBox="0 0 24 24" style="width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2;"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         Библиотека
       </div>
-      <div class="header-icons">
-        <button class="icon-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
-      </div>
     </div>
   </div>
 
@@ -435,12 +520,20 @@
 <!-- ЭКРАН ПЛЕЕРА -->
 <div id="playerScreen">
   <div class="player-top">
-    <button class="icon-btn-back" id="backToShelfBtn" title="Назад">
-      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-    </button>
-    <button class="icon-btn-back" id="layoutToggleBtn" title="Сменить вид" style="margin-left: 10px;">
-      <svg viewBox="0 0 24 24"><path d="M3 10h2v4H3v-4zm4-6h2v16H7V4zm4 3h2v10h-2V7zm4-3h2v16h-2V4zm4 6h2v4h-2v-4z"/></svg>
-    </button>
+    <div class="icon-box-btn" id="backToShelfBtn" title="Назад">
+      <svg viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </div>
+    
+    <div class="icon-box-btn" id="layoutToggleBtn" title="Сменить вид">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+        <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+        <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+        <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+      </svg>
+    </div>
   </div>
 
   <div class="player-center">
@@ -450,7 +543,7 @@
       <p id="readerAuthor">Автор</p>
     </div>
     
-    <!-- Текст текущего предложения (виден только в Компактном режиме) -->
+    <!-- Текст текущего предложения -->
     <div class="current-text-display" id="currentTextDisplay"></div>
 
     <!-- Эквалайзер -->
@@ -727,10 +820,18 @@ function applyLayout(index) {
   }
   localStorage.setItem('playerLayout', index.toString());
 
-  // Если переключились НЕ в компактный режим — принудительно скрываем текст
   if (currentTextDisplay && layouts[index] !== 'layout-compact') {
     currentTextDisplay.style.display = 'none';
     currentTextDisplay.textContent = '';
+  }
+  
+  if (currentTextDisplay && layouts[index] === 'layout-compact' && isPlaying && queue.length > 0) {
+    const currentChunk = queue[currentIndex];
+    if (currentChunk) {
+      currentTextDisplay.style.display = 'block';
+      currentTextDisplay.textContent = currentChunk;
+      currentTextDisplay.scrollTop = currentTextDisplay.scrollHeight;
+    }
   }
 }
 
@@ -1028,7 +1129,7 @@ function updatePlayerUI() {
 
   if (currentTextDisplay) {
     currentTextDisplay.textContent = '';
-    currentTextDisplay.style.display = 'none'; // Скрываем при смене главы
+    currentTextDisplay.style.display = 'none';
   }
 
   updateTotalProgress();
@@ -1132,9 +1233,8 @@ function speakNext() {
 
   const chunk = queue[currentIndex];
   
-  // Показываем карточку ТОЛЬКО в компактном режиме
   if (currentTextDisplay) {
-    if (layouts[currentLayoutIndex] === 'layout-compact') {
+    if (playerScreen.classList.contains('layout-compact')) {
       currentTextDisplay.style.display = 'block';
       currentTextDisplay.textContent = chunk;
       currentTextDisplay.scrollTop = currentTextDisplay.scrollHeight;
@@ -1229,7 +1329,7 @@ function stopPlayback() {
   
   if (currentTextDisplay) {
     currentTextDisplay.textContent = '';
-    currentTextDisplay.style.display = 'none'; // Скрываем при остановке
+    currentTextDisplay.style.display = 'none';
   }
 }
 
@@ -1246,7 +1346,6 @@ playStopBtn.addEventListener('click', () => {
       stopPlayback();
     }
   } else {
-    // СИНХРОННЫЙ ВЫЗОВ WAKE LOCK СРАЗУ ПОСЛЕ КЛИКА
     if (typeof requestWakeLock === 'function') {
       requestWakeLock(); 
     }
