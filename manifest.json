@@ -1,0 +1,17 @@
+{
+  "name": "Voice EPUB Reader",
+  "short_name": "eVoice",
+  "description": "Читалка EPUB с озвучиванием на русском языке",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3145/3145765.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
