@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#121212">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>eVoice</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
+<title>Аудиокнига</title>
 <style>
   /* ---------- Базовые стили ---------- */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -48,19 +48,14 @@
     z-index: 10;
     background: rgba(18, 18, 18, 0.95);
     backdrop-filter: blur(10px);
-    padding: 15px 20px 0 20px;
+    padding: 15px 20px 15px 20px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
   }
-  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; }
   .header-title { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .header-icons { display: flex; gap: 15px; }
   .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 5px; }
   .icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
-
-  .tabs { display: flex; gap: 25px; }
-  .tab { font-size: 14px; color: var(--text-muted); padding-bottom: 10px; cursor: pointer; font-weight: 600; position: relative; }
-  .tab.active { color: var(--text); }
-  .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--text); border-radius: 2px; }
 
   .shelf-container {
     padding: 20px 15px 100px 15px;
@@ -164,6 +159,8 @@
     flex-direction: column;
     height: 100%;
     padding-bottom: env(safe-area-inset-bottom);
+    position: relative;
+    overflow: hidden;
   }
   #playerScreen.active { display: flex; }
 
@@ -172,6 +169,7 @@
     padding: 5px 20px 0 20px;
     display: flex; 
     align-items: center; 
+    z-index: 10;
   }
   .icon-btn-back { background: none; border: none; color: var(--text); cursor: pointer; padding: 10px; margin-left: -10px; display: flex; align-items: center; justify-content: center; }
   .icon-btn-back svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -185,6 +183,7 @@
     gap: 12px;
     padding: 5px 20px;
     overflow-y: auto; 
+    z-index: 1;
   }
   
   .cover-container {
@@ -195,11 +194,12 @@
     border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     background: var(--surface); display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    transition: all 0.3s ease;
   }
   .cover-container img { width: 100%; height: 100%; object-fit: cover; }
   .cover-container .no-cover-large { color: #444; font-size: 80px; }
 
-  .book-meta { text-align: center; padding: 0 10px; }
+  .book-meta { text-align: center; padding: 0 10px; transition: all 0.3s ease; }
   .book-meta h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .book-meta p { font-size: 14px; color: var(--text-muted); }
 
@@ -209,9 +209,25 @@
     flex-direction: column;
     gap: 12px;
     padding: 0 20px 20px 20px;
+    z-index: 10;
+    transition: all 0.3s ease;
   }
 
-  .chapter-label { text-align: center; font-size: 13px; color: var(--text-muted); }
+  .chapter-label { 
+    text-align: center; 
+    font-size: 13px; 
+    color: var(--text-muted); 
+    line-height: 1.4;
+  }
+  #chapterTitle { 
+    font-weight: 600; 
+    color: var(--text); 
+    margin-bottom: 2px; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical; 
+    overflow: hidden; 
+  }
 
   .progress-bar-container {
     width: 100%;
@@ -242,11 +258,6 @@
   .voice-btn.active {
     background: rgba(255,255,255,0.15); color: var(--text); border-color: rgba(255,255,255,0.3);
   }
-  .speed-text-label {
-    font-size: 14px; color: var(--text-muted); font-weight: 500;
-    background: var(--surface); padding: 6px 16px; border-radius: 20px;
-  }
-  .speed-text-label span { color: var(--text); font-weight: 600; }
 
   .player-controls {
     display: flex; align-items: center; justify-content: space-between;
@@ -275,6 +286,124 @@
   .play-btn svg { width: 28px; height: 28px; fill: #121212; }
 
   #fileInput, #log { display: none; }
+
+  /* ============================================================
+     ЭКВАЛАЙЗЕР (ВИЗУАЛИЗАТОР)
+     ============================================================ */
+  .visualizer {
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    height: 40px;
+    margin: 10px 0;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+  }
+  
+  .visualizer .bar {
+    width: 4px;
+    border-radius: 2px;
+    height: 10%;
+  }
+
+  .visualizer.playing .bar {
+    animation: bounce 0.4s infinite alternate ease-in-out;
+  }
+
+  .visualizer .bar:nth-child(1)  { background: #00d2ff; animation-duration: 0.5s; animation-delay: 0.0s; }
+  .visualizer .bar:nth-child(2)  { background: #00e0e0; animation-duration: 0.4s; animation-delay: 0.1s; }
+  .visualizer .bar:nth-child(3)  { background: #00ebc0; animation-duration: 0.6s; animation-delay: 0.05s; }
+  .visualizer .bar:nth-child(4)  { background: #00f5a0; animation-duration: 0.35s; animation-delay: 0.15s; }
+  .visualizer .bar:nth-child(5)  { background: #2dfb80; animation-duration: 0.55s; animation-delay: 0.0s; }
+  .visualizer .bar:nth-child(6)  { background: #5eff60; animation-duration: 0.45s; animation-delay: 0.2s; }
+  .visualizer .bar:nth-child(7)  { background: #93ff40; animation-duration: 0.5s; animation-delay: 0.05s; }
+  .visualizer .bar:nth-child(8)  { background: #c0ff20; animation-duration: 0.65s; animation-delay: 0.15s; }
+  .visualizer .bar:nth-child(9)  { background: #ffe600; animation-duration: 0.3s; animation-delay: 0.0s; }
+  .visualizer .bar:nth-child(10) { background: #ffc800; animation-duration: 0.55s; animation-delay: 0.2s; }
+  .visualizer .bar:nth-child(11) { background: #ff9e00; animation-duration: 0.4s; animation-delay: 0.1s; }
+  .visualizer .bar:nth-child(12) { background: #ff7300; animation-duration: 0.6s; animation-delay: 0.05s; }
+  .visualizer .bar:nth-child(13) { background: #ff4e00; animation-duration: 0.35s; animation-delay: 0.15s; }
+  .visualizer .bar:nth-child(14) { background: #ff2600; animation-duration: 0.5s; animation-delay: 0.0s; }
+  .visualizer .bar:nth-child(15) { background: #ff0040; animation-duration: 0.45s; animation-delay: 0.2s; }
+
+  @keyframes bounce {
+    0% { height: 10%; }
+    100% { height: 100%; }
+  }
+
+  /* ============================================================
+     ТЕКУЩИЙ ТЕКСТ (Оформлен как карточка)
+     ============================================================ */
+  .current-text-display {
+    display: none;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    opacity: 1;
+    
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    
+    padding: 15px;
+    margin-top: 10px;
+    width: 100%;
+    overflow-y: auto;
+    max-height: 35vh; 
+    
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .current-text-display::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ============================================================
+     ВАРИАНТЫ ВЁРСТКИ
+     ============================================================ */
+
+  /* Вариант 2: Компактный */
+  #playerScreen.layout-compact .player-center {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 15px;
+    padding-top: 10px;
+    flex-wrap: wrap;
+  }
+  #playerScreen.layout-compact .cover-container {
+    max-width: 120px;
+    max-height: 18vh;
+    margin: 0;
+  }
+  #playerScreen.layout-compact .book-meta {
+    flex: 1;
+    min-width: 150px;
+    text-align: left;
+    padding: 0;
+    margin-top: 0;
+  }
+  #playerScreen.layout-compact .book-meta h2 {
+    font-size: 18px;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Вариант 3: Визуальный */
+  #playerScreen.layout-visual .visualizer {
+    display: flex;
+  }
+  #playerScreen.layout-visual .book-meta {
+    margin-bottom: 0;
+  }
+  #playerScreen.layout-visual .cover-container {
+    max-width: 200px;
+    max-height: 35vh;
+  }
+
 </style>
 </head>
 <body>
@@ -285,16 +414,11 @@
     <div class="header-top">
       <div class="header-title">
         <svg viewBox="0 0 24 24" style="width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2;"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        Моя полка
+        Библиотека
       </div>
       <div class="header-icons">
         <button class="icon-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
       </div>
-    </div>
-    <div class="tabs">
-      <div class="tab active">Мои книги</div>
-      <div class="tab">Недавние</div>
-      <div class="tab">Магазин</div>
     </div>
   </div>
 
@@ -314,6 +438,9 @@
     <button class="icon-btn-back" id="backToShelfBtn" title="Назад">
       <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
+    <button class="icon-btn-back" id="layoutToggleBtn" title="Сменить вид" style="margin-left: 10px;">
+      <svg viewBox="0 0 24 24"><path d="M3 10h2v4H3v-4zm4-6h2v16H7V4zm4 3h2v10h-2V7zm4-3h2v16h-2V4zm4 6h2v4h-2v-4z"/></svg>
+    </button>
   </div>
 
   <div class="player-center">
@@ -322,10 +449,25 @@
       <h2 id="readerTitle">Название книги</h2>
       <p id="readerAuthor">Автор</p>
     </div>
+    
+    <!-- Текст текущего предложения (виден только в Компактном режиме) -->
+    <div class="current-text-display" id="currentTextDisplay"></div>
+
+    <!-- Эквалайзер -->
+    <div class="visualizer" id="visualizer">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
   </div>
 
   <div class="bottom-panel">
-    <div class="chapter-label" id="chapterLabel">Глава 1 из 10</div>
+    <div class="chapter-label" id="chapterLabel">
+      <div id="chapterTitle">Название главы</div>
+      <div id="chapterCounter" style="font-size: 12px;">(1 из 10)</div>
+    </div>
     
     <div class="progress-bar-container">
       <div class="progress-bar-fill" id="progressBarFill"></div>
@@ -375,7 +517,6 @@ const backToShelfBtn = document.getElementById('backToShelfBtn');
 const coverContainer = document.getElementById('coverContainer');
 const readerTitle = document.getElementById('readerTitle');
 const readerAuthor = document.getElementById('readerAuthor');
-const chapterLabel = document.getElementById('chapterLabel');
 const progressBarFill = document.getElementById('progressBarFill');
 const infoPanel = document.getElementById('infoPanel');
 const prevChapterBtn = document.getElementById('prevChapterBtn');
@@ -386,6 +527,11 @@ const playStopBtn = document.getElementById('playStopBtn');
 const playIcon = document.getElementById('playIcon');
 const stopIcon = document.getElementById('stopIcon');
 const logEl = document.getElementById('log');
+const layoutToggleBtn = document.getElementById('layoutToggleBtn');
+const visualizer = document.getElementById('visualizer');
+const chapterTitleEl = document.getElementById('chapterTitle');
+const chapterCounterEl = document.getElementById('chapterCounter');
+const currentTextDisplay = document.getElementById('currentTextDisplay');
 
 // ============================================================
 //  СОСТОЯНИЕ
@@ -412,6 +558,15 @@ async function requestWakeLock() {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
       log('Wake Lock: экран не погаснет');
+      
+      wakeLock.addEventListener('release', () => {
+        log('Wake Lock был снят системой.');
+        if (isPlaying) {
+          setTimeout(() => {
+            if (isPlaying) requestWakeLock();
+          }, 1000);
+        }
+      });
     }
   } catch (err) {
     log('Ошибка Wake Lock: ' + err.message);
@@ -422,13 +577,13 @@ function releaseWakeLock() {
   if (wakeLock) {
     wakeLock.release().then(() => {
       wakeLock = null;
-      log('Wake Lock: отключен');
+      log('Wake Lock: отключен вручную');
     });
   }
 }
 
 document.addEventListener('visibilitychange', async () => {
-  if (wakeLock !== null && document.visibilityState === 'visible') {
+  if (document.visibilityState === 'visible' && isPlaying) {
     await requestWakeLock();
   }
 });
@@ -558,6 +713,38 @@ function loadVoices() {
 speechSynthesis.onvoiceschanged = () => loadVoices();
 loadVoices();
 setTimeout(loadVoices, 500);
+
+// ============================================================
+//  ВЁРСТКА (3 ВАРИАНТА)
+// ============================================================
+const layouts = ['', 'layout-compact', 'layout-visual'];
+let currentLayoutIndex = 0;
+
+function applyLayout(index) {
+  playerScreen.classList.remove('layout-compact', 'layout-visual');
+  if (layouts[index]) {
+    playerScreen.classList.add(layouts[index]);
+  }
+  localStorage.setItem('playerLayout', index.toString());
+
+  // Если переключились НЕ в компактный режим — принудительно скрываем текст
+  if (currentTextDisplay && layouts[index] !== 'layout-compact') {
+    currentTextDisplay.style.display = 'none';
+    currentTextDisplay.textContent = '';
+  }
+}
+
+layoutToggleBtn.addEventListener('click', () => {
+  currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
+  applyLayout(currentLayoutIndex);
+  log(`Вёрстка изменена на вариант ${currentLayoutIndex}`);
+});
+
+const savedLayout = localStorage.getItem('playerLayout');
+if (savedLayout) {
+  currentLayoutIndex = parseInt(savedLayout, 10);
+  applyLayout(currentLayoutIndex);
+}
 
 // ============================================================
 //  ПАРСИНГ EPUB
@@ -830,11 +1017,19 @@ function updatePlayerUI() {
   if (currentChapterIndex < 0 || currentChapterIndex >= chapterTexts.length) return;
   
   const currentCh = chapterTexts[currentChapterIndex];
-  const chapterTitle = currentCh.title || `Глава ${currentChapterIndex + 1}`;
-  chapterLabel.textContent = `${chapterTitle} (${currentChapterIndex + 1} из ${chapterTexts.length})`;
+  const titleStr = currentCh.title || `Глава ${currentChapterIndex + 1}`;
+  const counterStr = `(${currentChapterIndex + 1} из ${chapterTexts.length})`;
+
+  chapterTitleEl.textContent = titleStr;
+  chapterCounterEl.textContent = counterStr;
   
   prevChapterBtn.disabled = (currentChapterIndex <= 0);
   nextChapterBtn.disabled = (currentChapterIndex >= chapterTexts.length - 1);
+
+  if (currentTextDisplay) {
+    currentTextDisplay.textContent = '';
+    currentTextDisplay.style.display = 'none'; // Скрываем при смене главы
+  }
 
   updateTotalProgress();
   saveBookProgress();
@@ -936,6 +1131,18 @@ function speakNext() {
   }
 
   const chunk = queue[currentIndex];
+  
+  // Показываем карточку ТОЛЬКО в компактном режиме
+  if (currentTextDisplay) {
+    if (layouts[currentLayoutIndex] === 'layout-compact') {
+      currentTextDisplay.style.display = 'block';
+      currentTextDisplay.textContent = chunk;
+      currentTextDisplay.scrollTop = currentTextDisplay.scrollHeight;
+    } else {
+      currentTextDisplay.style.display = 'none';
+    }
+  }
+
   currentUtterance = new SpeechSynthesisUtterance(chunk);
   
   const voice = getSelectedVoice();
@@ -976,6 +1183,8 @@ async function startPlayback() {
   const text = chapterTexts[currentChapterIndex].text;
   if (!text) return;
 
+  if (visualizer) visualizer.classList.add('playing');
+
   if (queue.length > 0 && currentIndex < queue.length) {
     log(`Продолжаю с чанка ${currentIndex + 1}/${queue.length}`);
     isPlaying = true;
@@ -983,7 +1192,6 @@ async function startPlayback() {
     playIcon.style.display = 'none';
     stopIcon.style.display = 'block';
     
-    requestWakeLock();
     await new Promise(r => setTimeout(r, 300));
     await warmUpTTS();
     speakNext();
@@ -997,7 +1205,6 @@ async function startPlayback() {
   playIcon.style.display = 'none';
   stopIcon.style.display = 'block';
 
-  requestWakeLock();
   speechSynthesis.cancel();
 
   await new Promise(r => setTimeout(r, 300));
@@ -1017,6 +1224,13 @@ function stopPlayback() {
   speechSynthesis.cancel();
   releaseWakeLock();
   saveBookProgress();
+  
+  if (visualizer) visualizer.classList.remove('playing');
+  
+  if (currentTextDisplay) {
+    currentTextDisplay.textContent = '';
+    currentTextDisplay.style.display = 'none'; // Скрываем при остановке
+  }
 }
 
 playStopBtn.addEventListener('click', () => {
@@ -1032,6 +1246,10 @@ playStopBtn.addEventListener('click', () => {
       stopPlayback();
     }
   } else {
+    // СИНХРОННЫЙ ВЫЗОВ WAKE LOCK СРАЗУ ПОСЛЕ КЛИКА
+    if (typeof requestWakeLock === 'function') {
+      requestWakeLock(); 
+    }
     startPlayback();
   }
 });
@@ -1140,13 +1358,11 @@ fileInput.addEventListener('change', async (e) => {
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-// Очистка старой полки при первом запуске
-localStorage.removeItem('audioLibrary');
-library = [];
-
 loadLibrary();
 renderShelf();
 </script>
+
+<!-- Регистрация Service Worker для PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1156,5 +1372,6 @@ renderShelf();
     });
   }
 </script>
+
 </body>
 </html>
