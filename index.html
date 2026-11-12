@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>eVoice</title>
+<style>
+  /* ---------- Базовые стили ---------- */
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #121212;
+    --surface: #1e1e1e;
+    --text: #ffffff;
+    --text-muted: #888888;
+    --radius: 16px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    
+    --wood-bg: #2c2218;
+    --wood-shelf: #3e2f1f;
+    --wood-shelf-light: #5a462f;
+  }
+  
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- Экран полки (Библиотека) ---------- */
+  #shelfScreen {
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #1a1511 0%, #0d0a08 100%);
+  }
+  
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(18, 18, 18, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 15px 20px 0 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .header-title { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .header-icons { display: flex; gap: 15px; }
+  .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 5px; }
+  .icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  .tabs { display: flex; gap: 25px; }
+  .tab { font-size: 14px; color: var(--text-muted); padding-bottom: 10px; cursor: pointer; font-weight: 600; position: relative; }
+  .tab.active { color: var(--text); }
+  .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--text); border-radius: 2px; }
+
+  .shelf-container {
+    padding: 20px 15px 100px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .shelf-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0 10px;
+    align-items: end;
+    position: relative;
+  }
+  
+  .shelf-row::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: -10px;
+    right: -10px;
+    height: 12px;
+    background: linear-gradient(180deg, var(--wood-shelf-light) 0%, var(--wood-shelf) 40%, #1a120a 100%);
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    z-index: 1;
+  }
+
+  .book-card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s;
+  }
+  .book-card:active { transform: scale(0.95); }
+  
+  .book-cover-wrapper {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 4px 6px 6px 4px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: -2px 5px 10px rgba(0,0,0,0.5), inset 2px 0 4px rgba(255,255,255,0.1);
+    background: var(--surface);
+    border-left: 2px solid rgba(0,0,0,0.3);
+  }
+  
+  .book-cover-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .book-cover-wrapper .no-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #444;
+    font-size: 40px;
+  }
+
+  .book-delete {
+    position: absolute; top: -5px; right: -5px; 
+    background: rgba(231, 76, 60, 0.9); color: white;
+    border: none; border-radius: 50%; width: 22px; height: 22px; 
+    cursor: pointer; display: none; align-items: center; justify-content: center; 
+    font-size: 12px; z-index: 10;
+  }
+  .book-card:hover .book-delete { display: flex; }
+
+  .fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    color: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    cursor: pointer;
+    border: none;
+    z-index: 100;
+  }
+  .fab svg { width: 30px; height: 30px; fill: currentColor; }
+
+  .empty-msg { color: var(--text-muted); text-align: center; margin-top: 50px; font-size: 16px; }
+
+  /* ---------- Экран плеера ---------- */
+  #playerScreen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #playerScreen.active { display: flex; }
+
+  .player-top { 
+    flex-shrink: 0; 
+    padding: 5px 20px 0 20px;
+    display: flex; 
+    align-items: center; 
+  }
+  .icon-btn-back { background: none; border: none; color: var(--text); cursor: pointer; padding: 10px; margin-left: -10px; display: flex; align-items: center; justify-content: center; }
+  .icon-btn-back svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .player-center {
+    flex: 1; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 5px 20px;
+    overflow-y: auto; 
+  }
+  
+  .cover-container {
+    width: 100%; 
+    max-width: 220px; 
+    max-height: 40vh;
+    aspect-ratio: 2 / 3;
+    border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    background: var(--surface); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .cover-container img { width: 100%; height: 100%; object-fit: cover; }
+  .cover-container .no-cover-large { color: #444; font-size: 80px; }
+
+  .book-meta { text-align: center; padding: 0 10px; }
+  .book-meta h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .book-meta p { font-size: 14px; color: var(--text-muted); }
+
+  .bottom-panel {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 20px 20px 20px;
+  }
+
+  .chapter-label { text-align: center; font-size: 13px; color: var(--text-muted); }
+
+  .progress-bar-container {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--text);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+  }
+
+  .info-panel {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    min-height: 32px; align-items: center;
+  }
+  .voice-btn {
+    background: var(--surface); color: var(--text-muted);
+    border: 1px solid transparent; border-radius: 20px;
+    padding: 6px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .voice-btn.active {
+    background: rgba(255,255,255,0.15); color: var(--text); border-color: rgba(255,255,255,0.3);
+  }
+  .speed-text-label {
+    font-size: 14px; color: var(--text-muted); font-weight: 500;
+    background: var(--surface); padding: 6px 16px; border-radius: 20px;
+  }
+  .speed-text-label span { color: var(--text); font-weight: 600; }
+
+  .player-controls {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; max-width: 360px; margin: 0 auto;
+    gap: 4px;
+  }
+  
+  .speed-btn, .chapter-btn {
+    background: none; border: none; color: var(--text); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 44px; opacity: 0.8; transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .chapter-btn svg { width: 22px; height: 22px; fill: currentColor; }
+  .chapter-btn:active, .speed-btn:active { opacity: 0.5; }
+  .chapter-btn:disabled { opacity: 0.2; }
+
+  .play-btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #e0e0e0; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 15px rgba(255,255,255,0.1); transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .play-btn:active { transform: scale(0.95); }
+  .play-btn svg { width: 28px; height: 28px; fill: #121212; }
+
+  #fileInput, #log { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ЭКРАН ПОЛКИ -->
+<div id="shelfScreen">
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">
+        <svg viewBox="0 0 24 24" style="width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2;"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Моя полка
+      </div>
+      <div class="header-icons">
+        <button class="icon-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active">Мои книги</div>
+      <div class="tab">Недавние</div>
+      <div class="tab">Магазин</div>
+    </div>
+  </div>
+
+  <div class="shelf-container" id="bookshelf"></div>
+  <p class="empty-msg" id="emptyShelfMsg" style="display:none;">Полка пуста.<br>Нажмите +, чтобы добавить книгу.</p>
+
+  <button class="fab" id="uploadBtn">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
+  
+  <input type="file" id="fileInput" accept=".epub">
+</div>
+
+<!-- ЭКРАН ПЛЕЕРА -->
+<div id="playerScreen">
+  <div class="player-top">
+    <button class="icon-btn-back" id="backToShelfBtn" title="Назад">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="player-center">
+    <div class="cover-container" id="coverContainer"></div>
+    <div class="book-meta">
+      <h2 id="readerTitle">Название книги</h2>
+      <p id="readerAuthor">Автор</p>
+    </div>
+  </div>
+
+  <div class="bottom-panel">
+    <div class="chapter-label" id="chapterLabel">Глава 1 из 10</div>
+    
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+
+    <div class="info-panel" id="infoPanel"></div>
+    
+    <div class="player-controls">
+      <button class="chapter-btn" id="prevChapterBtn" title="Предыдущая глава">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      
+      <button class="chapter-btn" id="prevChunkBtn" title="Предыдущее предложение">
+        <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+      </button>
+
+      <button class="play-btn" id="playStopBtn" title="Слушать">
+        <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="stopIcon" viewBox="0 0 24 24" style="display:none;"><path d="M6 6h12v12H6z"/></svg>
+      </button>
+
+      <button class="chapter-btn" id="nextChunkBtn" title="Следующее предложение">
+        <svg viewBox="0 0 24 24"><path d="M13 6v12l8.5-6L13 6zM4 6v12l8.5-6L4 6z"/></svg>
+      </button>
+
+      <button class="chapter-btn" id="nextChapterBtn" title="Следующая глава">
+        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="log"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ============================================================
+//  DOM
+// ============================================================
+const shelfScreen = document.getElementById('shelfScreen');
+const playerScreen = document.getElementById('playerScreen');
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
+const bookshelf = document.getElementById('bookshelf');
+const emptyShelfMsg = document.getElementById('emptyShelfMsg');
+const backToShelfBtn = document.getElementById('backToShelfBtn');
+const coverContainer = document.getElementById('coverContainer');
+const readerTitle = document.getElementById('readerTitle');
+const readerAuthor = document.getElementById('readerAuthor');
+const chapterLabel = document.getElementById('chapterLabel');
+const progressBarFill = document.getElementById('progressBarFill');
+const infoPanel = document.getElementById('infoPanel');
+const prevChapterBtn = document.getElementById('prevChapterBtn');
+const prevChunkBtn = document.getElementById('prevChunkBtn');
+const nextChunkBtn = document.getElementById('nextChunkBtn');
+const nextChapterBtn = document.getElementById('nextChapterBtn');
+const playStopBtn = document.getElementById('playStopBtn');
+const playIcon = document.getElementById('playIcon');
+const stopIcon = document.getElementById('stopIcon');
+const logEl = document.getElementById('log');
+
+// ============================================================
+//  СОСТОЯНИЕ
+// ============================================================
+let library = [];
+let currentBook = null;
+let chapterTexts = [];
+let currentChapterIndex = -1;
+let russianVoices = [];
+let queue = [];
+let currentIndex = 0;
+let isPlaying = false;
+let currentUtterance = null;
+let wakeLock = null;
+
+// ============================================================
+//  УТИЛИТЫ
+// ============================================================
+function log(msg) { logEl.textContent += '\n' + msg; console.log(msg); }
+
+// --- Wake Lock ---
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      log('Wake Lock: экран не погаснет');
+    }
+  } catch (err) {
+    log('Ошибка Wake Lock: ' + err.message);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release().then(() => {
+      wakeLock = null;
+      log('Wake Lock: отключен');
+    });
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    await requestWakeLock();
+  }
+});
+
+function readFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function htmlToText(htmlString) {
+  let doc;
+  try {
+    const parser = new DOMParser();
+    doc = parser.parseFromString(htmlString, 'application/xhtml+xml');
+    if (doc.querySelector('parsererror')) throw new Error('XHTML parse error');
+  } catch (e) {
+    const parser = new DOMParser();
+    doc = parser.parseFromString(htmlString, 'text/html');
+  }
+  doc.querySelectorAll('script, style').forEach(el => el.remove());
+  const body = doc.body || doc.documentElement;
+  let text = body ? (body.textContent || '') : '';
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function resolvePath(base, relative) {
+  const baseParts = base.split('/');
+  baseParts.pop();
+  const baseDir = baseParts.join('/');
+  if (relative.startsWith('/')) return relative.slice(1);
+  return (baseDir ? baseDir + '/' : '') + relative;
+}
+
+// ============================================================
+//  ГОЛОСА И СКОРОСТЬ
+// ============================================================
+function updateInfoPanel() {
+  infoPanel.innerHTML = '';
+  const speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
+
+  if (russianVoices.length > 1) {
+    let savedVoiceURI = localStorage.getItem('preferredVoiceURI');
+    let activeIndex = russianVoices.findIndex(v => (v.voiceURI || v.name) === savedVoiceURI);
+    if (activeIndex === -1) {
+      activeIndex = 0;
+      localStorage.setItem('preferredVoiceURI', russianVoices[0].voiceURI || russianVoices[0].name);
+    }
+
+    russianVoices.forEach((v, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'voice-btn' + (index === activeIndex ? ' active' : '');
+      let shortName = v.name.replace('Microsoft ', '').replace(' - Russian (Russia)', '').replace('Google ', '');
+      if (shortName.length > 18) shortName = shortName.substring(0, 16) + '...';
+      btn.textContent = shortName;
+      btn.title = v.name;
+      
+      btn.addEventListener('click', () => {
+        if (btn.classList.contains('active')) return;
+        localStorage.setItem('preferredVoiceURI', v.voiceURI || v.name);
+        document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (isPlaying) {
+          speechSynthesis.cancel();
+          setTimeout(() => { if (isPlaying) speakNext(); }, 100);
+        }
+      });
+      infoPanel.appendChild(btn);
+    });
+  } else {
+    const speedContainer = document.createElement('div');
+    speedContainer.style.display = 'flex';
+    speedContainer.style.alignItems = 'center';
+    speedContainer.style.gap = '10px';
+    speedContainer.style.background = 'var(--surface)';
+    speedContainer.style.padding = '4px 12px';
+    speedContainer.style.borderRadius = '20px';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.className = 'speed-btn';
+    minusBtn.textContent = '−';
+    minusBtn.style.fontSize = '18px';
+    minusBtn.style.width = '24px';
+    minusBtn.style.height = '24px';
+    minusBtn.onclick = () => changeSpeed(-0.1);
+
+    const speedText = document.createElement('span');
+    speedText.id = 'speedVal';
+    speedText.style.fontSize = '14px';
+    speedText.style.fontWeight = '600';
+    speedText.style.minWidth = '35px';
+    speedText.style.textAlign = 'center';
+    speedText.textContent = speed.toFixed(1) + 'x';
+
+    const plusBtn = document.createElement('button');
+    plusBtn.className = 'speed-btn';
+    plusBtn.textContent = '+';
+    plusBtn.style.fontSize = '18px';
+    plusBtn.style.width = '24px';
+    plusBtn.style.height = '24px';
+    plusBtn.onclick = () => changeSpeed(0.1);
+
+    speedContainer.appendChild(minusBtn);
+    speedContainer.appendChild(speedText);
+    speedContainer.appendChild(plusBtn);
+    infoPanel.appendChild(speedContainer);
+  }
+}
+
+function changeSpeed(delta) {
+  let speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
+  speed = Math.min(2.0, Math.max(0.5, speed + delta));
+  localStorage.setItem('playerSpeed', speed.toFixed(1));
+  const speedSpan = document.getElementById('speedVal');
+  if (speedSpan) speedSpan.textContent = speed.toFixed(1) + 'x';
+}
+
+function loadVoices() {
+  const allVoices = speechSynthesis.getVoices();
+  russianVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ru'));
+  updateInfoPanel();
+}
+
+speechSynthesis.onvoiceschanged = () => loadVoices();
+loadVoices();
+setTimeout(loadVoices, 500);
+
+// ============================================================
+//  ПАРСИНГ EPUB
+// ============================================================
+async function parseEpubFromArrayBuffer(arrayBuffer) {
+  const zipLocal = await JSZip.loadAsync(arrayBuffer);
+
+  const containerFile = zipLocal.file('META-INF/container.xml');
+  if (!containerFile) throw new Error('Нет META-INF/container.xml');
+  const containerXml = await containerFile.async('string');
+  const containerDoc = new DOMParser().parseFromString(containerXml, 'text/xml');
+  const rootfileEl = containerDoc.querySelector('rootfile');
+  if (!rootfileEl) throw new Error('В container.xml нет rootfile');
+  const opfPath = rootfileEl.getAttribute('full-path');
+
+  const opfFile = zipLocal.file(opfPath);
+  if (!opfFile) throw new Error('OPF не найден: ' + opfPath);
+  const opfXml = await opfFile.async('string');
+  const opfDoc = new DOMParser().parseFromString(opfXml, 'text/xml');
+
+  let title = 'Без названия';
+  let author = 'Неизвестный автор';
+  let coverBase64 = null;
+
+  const titleEl = opfDoc.querySelector('metadata > dc\\:title, metadata > title');
+  if (titleEl && titleEl.textContent.trim()) title = titleEl.textContent.trim();
+  const creatorEl = opfDoc.querySelector('metadata > dc\\:creator, metadata > creator');
+  if (creatorEl && creatorEl.textContent.trim()) author = creatorEl.textContent.trim();
+
+  const manifest = {};
+  opfDoc.querySelectorAll('manifest > item').forEach(item => {
+    const id = item.getAttribute('id');
+    const href = item.getAttribute('href');
+    const mediaType = item.getAttribute('media-type');
+    const properties = item.getAttribute('properties');
+    if (id && href) manifest[id] = { href, mediaType, properties };
+  });
+
+  let coverPath = null;
+  for (const id in manifest) {
+    if (manifest[id].properties && manifest[id].properties.includes('cover-image')) {
+      coverPath = resolvePath(opfPath, manifest[id].href);
+      break;
+    }
+  }
+  if (!coverPath) {
+    const metaCover = opfDoc.querySelector('meta[name="cover"]');
+    if (metaCover) {
+      const coverId = metaCover.getAttribute('content');
+      if (coverId && manifest[coverId]) coverPath = resolvePath(opfPath, manifest[coverId].href);
+    }
+  }
+  if (coverPath) {
+    const coverFile = zipLocal.file(coverPath);
+    if (coverFile) {
+      try {
+        const coverData = await coverFile.async('base64');
+        let mediaType = 'image/jpeg';
+        for (const id in manifest) {
+          if (resolvePath(opfPath, manifest[id].href) === coverPath && manifest[id].mediaType) {
+            mediaType = manifest[id].mediaType;
+            break;
+          }
+        }
+        coverBase64 = `data:${mediaType};base64,${coverData}`;
+      } catch (e) { log('Ошибка обложки: ' + e.message); }
+    }
+  }
+
+  const spineIds = [];
+  opfDoc.querySelectorAll('spine > itemref').forEach(itemref => {
+    const idref = itemref.getAttribute('idref');
+    if (idref) spineIds.push(idref);
+  });
+
+  const chapters = [];
+  for (const idref of spineIds) {
+    const item = manifest[idref];
+    if (!item) continue;
+    chapters.push({ path: resolvePath(opfPath, item.href) });
+  }
+
+  let toc = {};
+  const navItem = Object.values(manifest).find(m => m.properties && m.properties.includes('nav'));
+  
+  if (navItem) {
+    const navPath = resolvePath(opfPath, navItem.href);
+    const navFile = zipLocal.file(navPath);
+    if (navFile) {
+      const navHtml = await navFile.async('string');
+      const navDoc = new DOMParser().parseFromString(navHtml, 'text/html');
+      navDoc.querySelectorAll('nav[epub\\:type="toc"] a, nav[role="doc-toc"] a').forEach(a => {
+        const href = a.getAttribute('href').split('#')[0];
+        const fullPath = resolvePath(navPath, href);
+        toc[fullPath] = a.textContent.trim();
+      });
+    }
+  } else {
+    const spineEl = opfDoc.querySelector('spine');
+    const tocId = spineEl ? spineEl.getAttribute('toc') : null;
+    if (tocId && manifest[tocId]) {
+      const ncxPath = resolvePath(opfPath, manifest[tocId].href);
+      const ncxFile = zipLocal.file(ncxPath);
+      if (ncxFile) {
+        const ncxXml = await ncxFile.async('string');
+        const ncxDoc = new DOMParser().parseFromString(ncxXml, 'text/xml');
+        ncxDoc.querySelectorAll('navPoint').forEach(np => {
+          const contentEl = np.querySelector('content');
+          const navLabelEl = np.querySelector('navLabel > text');
+          if (contentEl && navLabelEl) {
+            const href = contentEl.getAttribute('src').split('#')[0];
+            const fullPath = resolvePath(ncxPath, href);
+            toc[fullPath] = navLabelEl.textContent.trim();
+          }
+        });
+      }
+    }
+  }
+
+  const chapterTextsLocal = [];
+  let displayNumber = 1;
+  let totalChars = 0;
+  const chapterRegex = /^(глава|часть|пролог|эпилог|книга)\s*[0-9ivxlc]+/i;
+
+  for (const ch of chapters) {
+    try {
+      const f = zipLocal.file(ch.path);
+      if (!f) continue;
+      const htmlString = await f.async('string');
+      const text = htmlToText(htmlString);
+
+      const textStart = text.slice(0, 100).toLowerCase();
+      const isChapterStart = chapterRegex.test(textStart);
+      const isLargeText = text.length > 1000;
+
+      if (isChapterStart || isLargeText) {
+        const chapterTitle = toc[ch.path] || `Глава ${displayNumber}`;
+        chapterTextsLocal.push({ path: ch.path, text, title: chapterTitle });
+        totalChars += text.length;
+        displayNumber++;
+      } else {
+        log(`Пропущена служебная страница: ${ch.path} (длина: ${text.length})`);
+      }
+    } catch (err) { 
+      log(`⚠️ Ошибка на файле ${ch.path}: ${err.message}`); 
+    }
+  }
+
+  return { title, author, coverBase64, chapterTexts: chapterTextsLocal, totalChars };
+}
+
+// ============================================================
+//  ПОЛКА
+// ============================================================
+function saveLibrary() {
+  try {
+    localStorage.setItem('audioLibrary', JSON.stringify(library));
+  } catch (e) {
+    alert('Не удалось сохранить: превышен лимит хранилища. Попробуйте удалить старые книги.');
+  }
+}
+
+function saveBookProgress() {
+  if (currentBook) {
+    currentBook.currentChapterIndex = currentChapterIndex;
+    currentBook.currentChunkIndex = currentIndex;
+    saveLibrary();
+  }
+}
+
+function loadLibrary() {
+  const saved = localStorage.getItem('audioLibrary');
+  if (saved) {
+    try { library = JSON.parse(saved); } catch (e) { library = []; }
+  }
+}
+
+function renderShelf() {
+  bookshelf.innerHTML = '';
+  if (library.length === 0) {
+    emptyShelfMsg.style.display = 'block';
+    return;
+  }
+  emptyShelfMsg.style.display = 'none';
+
+  for (let i = 0; i < library.length; i += 3) {
+    const row = document.createElement('div');
+    row.className = 'shelf-row';
+
+    const chunk = library.slice(i, i + 3);
+    chunk.forEach((book, index) => {
+      const globalIndex = i + index;
+      const card = document.createElement('div');
+      card.className = 'book-card';
+
+      const coverHtml = book.coverBase64
+        ? `<img src="${book.coverBase64}" alt="Обложка">`
+        : `<div class="no-cover">📖</div>`;
+
+      card.innerHTML = `
+        <div class="book-cover-wrapper">
+          ${coverHtml}
+        </div>
+        <button class="book-delete" data-index="${globalIndex}">✕</button>
+      `;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('book-delete')) {
+          e.stopPropagation();
+          if (confirm('Удалить книгу?')) {
+            library.splice(globalIndex, 1);
+            saveLibrary();
+            renderShelf();
+          }
+          return;
+        }
+        openBook(book);
+      });
+
+      row.appendChild(card);
+    });
+
+    bookshelf.appendChild(row);
+  }
+}
+
+// ============================================================
+//  ОТКРЫТИЕ КНИГИ
+// ============================================================
+async function openBook(book) {
+  currentBook = book;
+  shelfScreen.style.display = 'none';
+  playerScreen.classList.add('active');
+
+  readerTitle.textContent = book.title;
+  readerAuthor.textContent = book.author;
+
+  if (book.coverBase64) {
+    coverContainer.innerHTML = `<img src="${book.coverBase64}" alt="Обложка">`;
+  } else {
+    coverContainer.innerHTML = `<div class="no-cover-large">📖</div>`;
+  }
+
+  try {
+    chapterTexts = book.chapters || [];
+
+    if (chapterTexts.length === 0) {
+      alert('В этой книге нет текста.');
+      return;
+    }
+
+    currentChapterIndex = book.currentChapterIndex || 0;
+    if (currentChapterIndex >= chapterTexts.length) currentChapterIndex = 0;
+
+    const text = chapterTexts[currentChapterIndex].text;
+    queue = splitIntoChunks(text, 300);
+    currentIndex = book.currentChunkIndex || 0;
+    if (currentIndex >= queue.length) currentIndex = 0;
+
+    updatePlayerUI();
+  } catch (err) {
+    log('Ошибка открытия: ' + err.message);
+  }
+}
+
+// ============================================================
+//  ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
+// ============================================================
+function updatePlayerUI() {
+  if (currentChapterIndex < 0 || currentChapterIndex >= chapterTexts.length) return;
+  
+  const currentCh = chapterTexts[currentChapterIndex];
+  const chapterTitle = currentCh.title || `Глава ${currentChapterIndex + 1}`;
+  chapterLabel.textContent = `${chapterTitle} (${currentChapterIndex + 1} из ${chapterTexts.length})`;
+  
+  prevChapterBtn.disabled = (currentChapterIndex <= 0);
+  nextChapterBtn.disabled = (currentChapterIndex >= chapterTexts.length - 1);
+
+  updateTotalProgress();
+  saveBookProgress();
+}
+
+function updateTotalProgress() {
+  if (!currentBook || !progressBarFill) return;
+
+  let totalChars = currentBook.totalChars;
+  if (!totalChars) {
+    totalChars = chapterTexts.reduce((sum, ch) => sum + ch.text.length, 0);
+    currentBook.totalChars = totalChars;
+  }
+  if (totalChars === 0) return;
+
+  let charsBefore = 0;
+  for (let i = 0; i < currentChapterIndex; i++) {
+    charsBefore += chapterTexts[i].text.length;
+  }
+
+  let charsReadInChapter = 0;
+  for (let i = 0; i < currentIndex; i++) {
+    if (queue[i]) charsReadInChapter += queue[i].length;
+  }
+
+  const totalRead = charsBefore + charsReadInChapter;
+  const percent = Math.min(100, Math.round((totalRead / totalChars) * 100));
+  progressBarFill.style.width = percent + '%';
+}
+
+// ============================================================
+//  TTS
+// ============================================================
+function splitIntoChunks(text, maxLen = 300) {
+  const sentences = text.match(/[^.!?…]+[.!?…]+["»)]?\s*|[^.!?…]+$/g) || [text];
+  const chunks = [];
+  let buf = '';
+  for (let s of sentences) {
+    s = s.trim();
+    if (!s) continue;
+    if ((buf + ' ' + s).trim().length <= maxLen) buf = (buf + ' ' + s).trim();
+    else {
+      if (buf) chunks.push(buf);
+      if (s.length > maxLen) {
+        const words = s.split(/\s+/);
+        let part = '';
+        for (const w of words) {
+          if ((part + ' ' + w).trim().length <= maxLen) part = (part + ' ' + w).trim();
+          else { if (part) chunks.push(part); part = w; }
+        }
+        buf = part;
+      } else buf = s;
+    }
+  }
+  if (buf) chunks.push(buf);
+  return chunks;
+}
+
+function warmUpTTS() {
+  return new Promise((resolve) => {
+    try {
+      const dummy = new SpeechSynthesisUtterance(' ');
+      dummy.volume = 0;
+      dummy.onend = () => resolve();
+      dummy.onerror = () => resolve();
+      speechSynthesis.speak(dummy);
+    } catch (e) { resolve(); }
+    setTimeout(resolve, 300);
+  });
+}
+
+function getSelectedVoice() {
+  const savedURI = localStorage.getItem('preferredVoiceURI');
+  let voice = russianVoices.find(v => (v.voiceURI || v.name) === savedURI);
+  if (!voice && russianVoices.length > 0) voice = russianVoices[0];
+  return voice;
+}
+
+function speakNext() {
+  if (!isPlaying) return;
+  
+  if (currentIndex >= queue.length) {
+    if (currentChapterIndex < chapterTexts.length - 1) {
+      log('Конец главы. Переход к следующей...');
+      const wasPlaying = isPlaying;
+      currentChapterIndex++;
+      currentIndex = 0;
+      queue = [];
+      updatePlayerUI();
+      if (wasPlaying) {
+        setTimeout(() => { startPlayback(); }, 1000);
+      }
+      return;
+    } else {
+      log('Книга завершена!');
+      stopPlayback();
+      return;
+    }
+  }
+
+  const chunk = queue[currentIndex];
+  currentUtterance = new SpeechSynthesisUtterance(chunk);
+  
+  const voice = getSelectedVoice();
+  if (voice) {
+    currentUtterance.voice = voice;
+    currentUtterance.lang = voice.lang;
+  } else {
+    currentUtterance.lang = 'ru-RU';
+  }
+
+  const speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
+  currentUtterance.rate = speed;
+
+  currentUtterance.onend = () => {
+    if (!isPlaying) return;
+    currentIndex++;
+    updateTotalProgress();
+    saveBookProgress();
+    speakNext();
+  };
+  
+  currentUtterance.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    log(`⚠️ Ошибка: ${e.error}`);
+    currentIndex++;
+    setTimeout(speakNext, 200);
+  };
+  
+  speechSynthesis.speak(currentUtterance);
+}
+
+// ============================================================
+//  УПРАВЛЕНИЕ
+// ============================================================
+async function startPlayback() {
+  if (currentChapterIndex < 0 || !chapterTexts[currentChapterIndex]) return;
+  
+  const text = chapterTexts[currentChapterIndex].text;
+  if (!text) return;
+
+  if (queue.length > 0 && currentIndex < queue.length) {
+    log(`Продолжаю с чанка ${currentIndex + 1}/${queue.length}`);
+    isPlaying = true;
+    playStopBtn.classList.add('playing');
+    playIcon.style.display = 'none';
+    stopIcon.style.display = 'block';
+    
+    requestWakeLock();
+    await new Promise(r => setTimeout(r, 300));
+    await warmUpTTS();
+    speakNext();
+    return;
+  }
+
+  currentIndex = 0;
+  
+  isPlaying = true;
+  playStopBtn.classList.add('playing');
+  playIcon.style.display = 'none';
+  stopIcon.style.display = 'block';
+
+  requestWakeLock();
+  speechSynthesis.cancel();
+
+  await new Promise(r => setTimeout(r, 300));
+  await warmUpTTS();
+
+  queue = splitIntoChunks(text, 300);
+  if (!queue.length) { stopPlayback(); return; }
+  
+  speakNext();
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  playStopBtn.classList.remove('playing');
+  playIcon.style.display = 'block';
+  stopIcon.style.display = 'none';
+  speechSynthesis.cancel();
+  releaseWakeLock();
+  saveBookProgress();
+}
+
+playStopBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    if (!speechSynthesis.speaking) {
+      log('🔄 Пробуждение после блокировки...');
+      isPlaying = false; 
+      playStopBtn.classList.remove('playing');
+      playIcon.style.display = 'block';
+      stopIcon.style.display = 'none';
+      setTimeout(() => { startPlayback(); }, 150);
+    } else {
+      stopPlayback();
+    }
+  } else {
+    startPlayback();
+  }
+});
+
+prevChapterBtn.addEventListener('click', () => {
+  if (currentChapterIndex > 0) {
+    const wasPlaying = isPlaying;
+    stopPlayback();
+    currentChapterIndex--;
+    currentIndex = 0;
+    queue = [];
+    if (currentBook) currentBook.currentChunkIndex = 0;
+    updatePlayerUI();
+    if (wasPlaying) startPlayback();
+  }
+});
+
+nextChapterBtn.addEventListener('click', () => {
+  if (currentChapterIndex < chapterTexts.length - 1) {
+    const wasPlaying = isPlaying;
+    stopPlayback();
+    currentChapterIndex++;
+    currentIndex = 0;
+    queue = [];
+    if (currentBook) currentBook.currentChunkIndex = 0;
+    updatePlayerUI();
+    if (wasPlaying) startPlayback();
+  }
+});
+
+prevChunkBtn.addEventListener('click', () => {
+  if (currentIndex > 0) {
+    const wasPlaying = isPlaying;
+    stopPlayback();
+    currentIndex--;
+    updateTotalProgress();
+    saveBookProgress();
+    if (wasPlaying) startPlayback();
+  }
+});
+
+nextChunkBtn.addEventListener('click', () => {
+  if (currentIndex < queue.length - 1) {
+    const wasPlaying = isPlaying;
+    stopPlayback();
+    currentIndex++;
+    updateTotalProgress();
+    saveBookProgress();
+    if (wasPlaying) startPlayback();
+  }
+});
+
+backToShelfBtn.addEventListener('click', () => {
+  stopPlayback();
+  playerScreen.classList.remove('active');
+  shelfScreen.style.display = 'block';
+  currentBook = null;
+  chapterTexts = [];
+  currentChapterIndex = -1;
+  queue = [];
+  renderShelf();
+});
+
+// ============================================================
+//  ЗАГРУЗКА КНИГИ
+// ============================================================
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  uploadBtn.disabled = true;
+
+  try {
+    const arrayBuffer = await readFileAsArrayBuffer(file);
+    const parsed = await parseEpubFromArrayBuffer(arrayBuffer);
+
+    if (parsed.chapterTexts.length === 0) {
+      alert('В книге нет текста.');
+      return;
+    }
+
+    const newBook = {
+      id: Date.now().toString(),
+      title: parsed.title,
+      author: parsed.author,
+      coverBase64: parsed.coverBase64,
+      chapters: parsed.chapterTexts,
+      totalChars: parsed.totalChars,
+      currentChapterIndex: 0,
+      currentChunkIndex: 0
+    };
+
+    library.push(newBook);
+    saveLibrary();
+    renderShelf();
+  } catch (err) {
+    alert('Ошибка: ' + err.message);
+  } finally {
+    uploadBtn.disabled = false;
+    fileInput.value = '';
+  }
+});
+
+// ============================================================
+//  ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+// Очистка старой полки при первом запуске
+localStorage.removeItem('audioLibrary');
+library = [];
+
+loadLibrary();
+renderShelf();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker зарегистрирован!'))
+        .catch(err => console.log('Ошибка SW: ', err));
+    });
+  }
+</script>
+</body>
+</html>
