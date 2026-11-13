@@ -131,12 +131,11 @@
     font-size: 12px; z-index: 10;
   }
   
-  /* Показываем кнопку удаления на мобильных (где нет hover) */
   @media (max-width: 768px) {
     .book-delete {
-      display: flex !important; /* Принудительно показываем */
-      opacity: 0.8; /* Слегка прозрачная, чтобы не бросалась в глаза */
-      width: 26px;  /* Чуть крупнее для пальца */
+      display: flex !important;
+      opacity: 0.8;
+      width: 26px;
       height: 26px;
       font-size: 14px;
       top: -8px;
@@ -400,16 +399,17 @@
     100% { height: 100%; }
   }
 
-  /* Вариант 4: От центра */
+  /* Вариант 4: От центра (ИСПРАВЛЕНО) */
   .visualizer.style-center {
     align-items: center;
   }
   .visualizer.style-center .bar {
     animation-name: bounce-center;
+    transform-origin: center;
   }
   @keyframes bounce-center {
-    0% { height: 10%; transform: translateY(0); }
-    100% { height: 100%; transform: translateY(-50%); }
+    0% { height: 20%; }
+    100% { height: 80%; }
   }
 
   @keyframes bounce {
