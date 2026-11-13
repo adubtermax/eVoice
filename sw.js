@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eVoice-v3.06';
+const CACHE_NAME = 'eVoice-v3.07';
 const ASSETS = [
   './',
   './index.html',
