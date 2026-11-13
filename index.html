@@ -130,7 +130,19 @@
     cursor: pointer; display: none; align-items: center; justify-content: center; 
     font-size: 12px; z-index: 10;
   }
-  .book-card:hover .book-delete { display: flex; }
+  
+  /* Показываем кнопку удаления на мобильных (где нет hover) */
+  @media (max-width: 768px) {
+    .book-delete {
+      display: flex !important; /* Принудительно показываем */
+      opacity: 0.8; /* Слегка прозрачная, чтобы не бросалась в глаза */
+      width: 26px;  /* Чуть крупнее для пальца */
+      height: 26px;
+      font-size: 14px;
+      top: -8px;
+      right: -8px;
+    }
+  }
 
   .fab {
     position: fixed;
@@ -164,9 +176,6 @@
   }
   #playerScreen.active { display: flex; }
 
-  /* ============================================================
-     ВЕРХНЯЯ ПАНЕЛЬ (Назад и Смена вида)
-     ============================================================ */
   .player-top { 
     flex-shrink: 0; 
     padding: 15px 20px 0 20px;
@@ -192,14 +201,10 @@
     transition: all 0.2s ease;
     color: var(--text);
   }
-
   .icon-box-btn:active {
-    box-shadow: 
-      inset -6px -6px 12px rgba(255, 255, 255, 0.08),
-      inset 6px 6px 15px rgba(0, 0, 0, 1);
+    box-shadow: inset -6px -6px 12px rgba(255, 255, 255, 0.08), inset 6px 6px 15px rgba(0, 0, 0, 1);
     transform: scale(0.94);
   }
-
   .icon-box-btn svg {
     width: 24px;
     height: 24px;
@@ -285,20 +290,12 @@
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
     min-height: 32px; align-items: center;
   }
-  .voice-btn {
-    background: var(--surface); color: var(--text-muted);
-    border: 1px solid transparent; border-radius: 20px;
-    padding: 6px 16px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    max-width: 150px; overflow: hidden; text-overflow: ellipsis;
+  .speed-text-label {
+    font-size: 14px; color: var(--text-muted); font-weight: 500;
+    background: var(--surface); padding: 6px 16px; border-radius: 20px;
   }
-  .voice-btn.active {
-    background: rgba(255,255,255,0.15); color: var(--text); border-color: rgba(255,255,255,0.3);
-  }
+  .speed-text-label span { color: var(--text); font-weight: 600; }
 
-  /* ============================================================
-     МАКСИМАЛЬНО КОНТРАСТНЫЙ ДИЗАЙН КНОПОК (ПЛЕЕР)
-     ============================================================ */
   .player-controls {
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; max-width: 360px; margin: 0 auto;
@@ -321,36 +318,15 @@
     transition: all 0.2s ease;
     color: var(--text);
   }
-
   .speed-btn:active, .chapter-btn:active, .play-btn:active {
-    box-shadow: 
-      inset -6px -6px 12px rgba(255, 255, 255, 0.08),
-      inset 6px 6px 15px rgba(0, 0, 0, 1);
+    box-shadow: inset -6px -6px 12px rgba(255, 255, 255, 0.08), inset 6px 6px 15px rgba(0, 0, 0, 1);
     transform: scale(0.94);
   }
-
-  .chapter-btn {
-    width: 48px;
-    height: 48px;
-  }
-  .chapter-btn svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-    filter: drop-shadow(0 0 3px rgba(255,255,255,0.4));
-  }
-  .chapter-btn:disabled {
-    opacity: 0.2;
-    box-shadow: none;
-  }
-
-  .speed-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    font-weight: 600;
-  }
-
+  .chapter-btn { width: 48px; height: 48px; }
+  .chapter-btn svg { width: 20px; height: 20px; fill: currentColor; filter: drop-shadow(0 0 3px rgba(255,255,255,0.4)); }
+  .chapter-btn:disabled { opacity: 0.2; box-shadow: none; }
+  .speed-btn { width: 40px; height: 40px; font-size: 20px; font-weight: 600; }
+  
   .play-btn {
     width: 76px;
     height: 76px;
@@ -362,16 +338,8 @@
       inset 0 3px 4px rgba(255, 255, 255, 1),
       inset 0 -3px 6px rgba(0, 0, 0, 0.3);
   }
-  .play-btn svg {
-    width: 34px;
-    height: 34px;
-    fill: currentColor;
-  }
-  .play-btn:active {
-    box-shadow: 
-      inset -8px -8px 15px rgba(255, 255, 255, 0.3),
-      inset 8px 8px 20px rgba(0, 0, 0, 0.9);
-  }
+  .play-btn svg { width: 34px; height: 34px; fill: currentColor; }
+  .play-btn:active { box-shadow: inset -8px -8px 15px rgba(255, 255, 255, 0.3), inset 8px 8px 20px rgba(0, 0, 0, 0.9); }
 
   #fileInput, #log { display: none; }
 
@@ -387,18 +355,18 @@
     margin: 10px 0;
     opacity: 0.8;
     transition: opacity 0.3s;
+    cursor: pointer;
   }
-  
   .visualizer .bar {
     width: 4px;
     border-radius: 2px;
     height: 10%;
   }
-
   .visualizer.playing .bar {
     animation: bounce 0.4s infinite alternate ease-in-out;
   }
 
+  /* Цветной градиент (по умолчанию) */
   .visualizer .bar:nth-child(1)  { background: #00d2ff; animation-duration: 0.5s; animation-delay: 0.0s; }
   .visualizer .bar:nth-child(2)  { background: #00e0e0; animation-duration: 0.4s; animation-delay: 0.1s; }
   .visualizer .bar:nth-child(3)  { background: #00ebc0; animation-duration: 0.6s; animation-delay: 0.05s; }
@@ -415,6 +383,35 @@
   .visualizer .bar:nth-child(14) { background: #ff2600; animation-duration: 0.5s; animation-delay: 0.0s; }
   .visualizer .bar:nth-child(15) { background: #ff0040; animation-duration: 0.45s; animation-delay: 0.2s; }
 
+  /* Вариант 2: Серый градиент */
+  .visualizer.style-gray .bar {
+    background: #888 !important;
+  }
+
+  /* Вариант 3: Перевёрнутый (сверху вниз) */
+  .visualizer.style-reverse {
+    align-items: flex-start;
+  }
+  .visualizer.style-reverse .bar {
+    animation-name: bounce-reverse;
+  }
+  @keyframes bounce-reverse {
+    0% { height: 10%; }
+    100% { height: 100%; }
+  }
+
+  /* Вариант 4: От центра */
+  .visualizer.style-center {
+    align-items: center;
+  }
+  .visualizer.style-center .bar {
+    animation-name: bounce-center;
+  }
+  @keyframes bounce-center {
+    0% { height: 10%; transform: translateY(0); }
+    100% { height: 100%; transform: translateY(-50%); }
+  }
+
   @keyframes bounce {
     0% { height: 10%; }
     100% { height: 100%; }
@@ -430,67 +427,43 @@
     line-height: 1.5;
     color: var(--text);
     opacity: 1;
-    
     background: var(--surface);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    
     padding: 15px;
     margin-top: 10px;
     width: 100%;
     overflow-y: auto;
     max-height: 35vh; 
-    
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  
-  .current-text-display::-webkit-scrollbar {
-    display: none;
-  }
+  .current-text-display::-webkit-scrollbar { display: none; }
 
   /* ============================================================
      ВАРИАНТЫ ВЁРСТКИ
      ============================================================ */
-
+  
   /* Вариант 2: Текст */
   #playerScreen.layout-compact .player-center {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 15px;
-    padding-top: 10px;
-    flex-wrap: wrap;
+    flex-direction: row; align-items: flex-start; justify-content: flex-start; gap: 15px; padding-top: 10px; flex-wrap: wrap;
   }
-  #playerScreen.layout-compact .cover-container {
-    max-width: 120px;
-    max-height: 18vh;
-    margin: 0;
-  }
-  #playerScreen.layout-compact .book-meta {
-    flex: 1;
-    min-width: 150px;
-    text-align: left;
-    padding: 0;
-    margin-top: 0;
-  }
-  #playerScreen.layout-compact .book-meta h2 {
-    font-size: 18px;
-    -webkit-line-clamp: 3;
-  }
+  #playerScreen.layout-compact .cover-container { max-width: 120px; max-height: 18vh; margin: 0; }
+  #playerScreen.layout-compact .book-meta { flex: 1; min-width: 150px; text-align: left; padding: 0; margin-top: 0; }
+  #playerScreen.layout-compact .book-meta h2 { font-size: 18px; -webkit-line-clamp: 3; }
 
   /* Вариант 3: Визуальный */
-  #playerScreen.layout-visual .visualizer {
-    display: flex;
-  }
-  #playerScreen.layout-visual .book-meta {
-    margin-bottom: 0;
-  }
-  #playerScreen.layout-visual .cover-container {
-    max-width: 200px;
-    max-height: 35vh;
-  }
+  #playerScreen.layout-visual .visualizer { display: flex; }
+  #playerScreen.layout-visual .book-meta { margin-bottom: 0; }
+  #playerScreen.layout-visual .cover-container { max-width: 200px; max-height: 35vh; }
+
+  /* Вариант 4: Карман */
+  #playerScreen.layout-pocket .player-center { display: none; }
+  #playerScreen.layout-pocket .bottom-panel { display: none; }
+  #playerScreen.layout-pocket .player-top { justify-content: flex-end; padding-top: 20px; padding-right: 20px; }
+  #playerScreen.layout-pocket #backToShelfBtn { display: none; }
+  #playerScreen.layout-pocket #layoutToggleBtn { opacity: 0.5; }
 
 </style>
 </head>
@@ -521,9 +494,7 @@
 <div id="playerScreen">
   <div class="player-top">
     <div class="icon-box-btn" id="backToShelfBtn" title="Назад">
-      <svg viewBox="0 0 24 24">
-        <path d="M15 18l-6-6 6-6"/>
-      </svg>
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
     </div>
     
     <div class="icon-box-btn" id="layoutToggleBtn" title="Сменить вид">
@@ -543,10 +514,8 @@
       <p id="readerAuthor">Автор</p>
     </div>
     
-    <!-- Текст текущего предложения -->
     <div class="current-text-display" id="currentTextDisplay"></div>
 
-    <!-- Эквалайзер -->
     <div class="visualizer" id="visualizer">
       <div class="bar"></div><div class="bar"></div><div class="bar"></div>
       <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -639,46 +608,35 @@ let currentIndex = 0;
 let isPlaying = false;
 let currentUtterance = null;
 let wakeLock = null;
+let chunkSeekTimer = null;
 
 // ============================================================
 //  УТИЛИТЫ
 // ============================================================
 function log(msg) { logEl.textContent += '\n' + msg; console.log(msg); }
 
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
 // --- Wake Lock ---
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      log('Wake Lock: экран не погаснет');
-      
       wakeLock.addEventListener('release', () => {
-        log('Wake Lock был снят системой.');
-        if (isPlaying) {
-          setTimeout(() => {
-            if (isPlaying) requestWakeLock();
-          }, 1000);
-        }
+        if (isPlaying) setTimeout(() => { if (isPlaying) requestWakeLock(); }, 1000);
       });
     }
-  } catch (err) {
-    log('Ошибка Wake Lock: ' + err.message);
-  }
+  } catch (err) { log('Ошибка Wake Lock: ' + err.message); }
 }
 
 function releaseWakeLock() {
-  if (wakeLock) {
-    wakeLock.release().then(() => {
-      wakeLock = null;
-      log('Wake Lock: отключен вручную');
-    });
-  }
+  if (wakeLock) wakeLock.release().then(() => { wakeLock = null; });
 }
 
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && isPlaying) {
-    await requestWakeLock();
-  }
+  if (document.visibilityState === 'visible' && isPlaying) await requestWakeLock();
 });
 
 function readFileAsArrayBuffer(file) {
@@ -715,78 +673,36 @@ function resolvePath(base, relative) {
 }
 
 // ============================================================
-//  ГОЛОСА И СКОРОСТЬ
+//  СКОРОСТЬ
 // ============================================================
 function updateInfoPanel() {
   infoPanel.innerHTML = '';
   const speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
 
-  if (russianVoices.length > 1) {
-    let savedVoiceURI = localStorage.getItem('preferredVoiceURI');
-    let activeIndex = russianVoices.findIndex(v => (v.voiceURI || v.name) === savedVoiceURI);
-    if (activeIndex === -1) {
-      activeIndex = 0;
-      localStorage.setItem('preferredVoiceURI', russianVoices[0].voiceURI || russianVoices[0].name);
-    }
+  const speedContainer = document.createElement('div');
+  speedContainer.style.display = 'flex'; speedContainer.style.alignItems = 'center';
+  speedContainer.style.gap = '10px'; speedContainer.style.background = 'var(--surface)';
+  speedContainer.style.padding = '4px 12px'; speedContainer.style.borderRadius = '20px';
 
-    russianVoices.forEach((v, index) => {
-      const btn = document.createElement('button');
-      btn.className = 'voice-btn' + (index === activeIndex ? ' active' : '');
-      let shortName = v.name.replace('Microsoft ', '').replace(' - Russian (Russia)', '').replace('Google ', '');
-      if (shortName.length > 18) shortName = shortName.substring(0, 16) + '...';
-      btn.textContent = shortName;
-      btn.title = v.name;
-      
-      btn.addEventListener('click', () => {
-        if (btn.classList.contains('active')) return;
-        localStorage.setItem('preferredVoiceURI', v.voiceURI || v.name);
-        document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (isPlaying) {
-          speechSynthesis.cancel();
-          setTimeout(() => { if (isPlaying) speakNext(); }, 100);
-        }
-      });
-      infoPanel.appendChild(btn);
-    });
-  } else {
-    const speedContainer = document.createElement('div');
-    speedContainer.style.display = 'flex';
-    speedContainer.style.alignItems = 'center';
-    speedContainer.style.gap = '10px';
-    speedContainer.style.background = 'var(--surface)';
-    speedContainer.style.padding = '4px 12px';
-    speedContainer.style.borderRadius = '20px';
+  const minusBtn = document.createElement('button');
+  minusBtn.className = 'speed-btn'; minusBtn.textContent = '−';
+  minusBtn.style.fontSize = '18px'; minusBtn.style.width = '24px'; minusBtn.style.height = '24px';
+  minusBtn.onclick = () => changeSpeed(-0.1);
 
-    const minusBtn = document.createElement('button');
-    minusBtn.className = 'speed-btn';
-    minusBtn.textContent = '−';
-    minusBtn.style.fontSize = '18px';
-    minusBtn.style.width = '24px';
-    minusBtn.style.height = '24px';
-    minusBtn.onclick = () => changeSpeed(-0.1);
+  const speedText = document.createElement('span');
+  speedText.id = 'speedVal'; speedText.style.fontSize = '14px'; speedText.style.fontWeight = '600';
+  speedText.style.minWidth = '35px'; speedText.style.textAlign = 'center';
+  speedText.textContent = speed.toFixed(1) + 'x';
 
-    const speedText = document.createElement('span');
-    speedText.id = 'speedVal';
-    speedText.style.fontSize = '14px';
-    speedText.style.fontWeight = '600';
-    speedText.style.minWidth = '35px';
-    speedText.style.textAlign = 'center';
-    speedText.textContent = speed.toFixed(1) + 'x';
+  const plusBtn = document.createElement('button');
+  plusBtn.className = 'speed-btn'; plusBtn.textContent = '+';
+  plusBtn.style.fontSize = '18px'; plusBtn.style.width = '24px'; plusBtn.style.height = '24px';
+  plusBtn.onclick = () => changeSpeed(0.1);
 
-    const plusBtn = document.createElement('button');
-    plusBtn.className = 'speed-btn';
-    plusBtn.textContent = '+';
-    plusBtn.style.fontSize = '18px';
-    plusBtn.style.width = '24px';
-    plusBtn.style.height = '24px';
-    plusBtn.onclick = () => changeSpeed(0.1);
-
-    speedContainer.appendChild(minusBtn);
-    speedContainer.appendChild(speedText);
-    speedContainer.appendChild(plusBtn);
-    infoPanel.appendChild(speedContainer);
-  }
+  speedContainer.appendChild(minusBtn);
+  speedContainer.appendChild(speedText);
+  speedContainer.appendChild(plusBtn);
+  infoPanel.appendChild(speedContainer);
 }
 
 function changeSpeed(delta) {
@@ -808,16 +724,14 @@ loadVoices();
 setTimeout(loadVoices, 500);
 
 // ============================================================
-//  ВЁРСТКА (3 ВАРИАНТА)
+//  ВЁРСТКА (4 ВАРИАНТА)
 // ============================================================
-const layouts = ['', 'layout-compact', 'layout-visual'];
+const layouts = ['', 'layout-compact', 'layout-visual', 'layout-pocket'];
 let currentLayoutIndex = 0;
 
 function applyLayout(index) {
-  playerScreen.classList.remove('layout-compact', 'layout-visual');
-  if (layouts[index]) {
-    playerScreen.classList.add(layouts[index]);
-  }
+  playerScreen.classList.remove('layout-compact', 'layout-visual', 'layout-pocket');
+  if (layouts[index]) playerScreen.classList.add(layouts[index]);
   localStorage.setItem('playerLayout', index.toString());
 
   if (currentTextDisplay && layouts[index] !== 'layout-compact') {
@@ -836,9 +750,9 @@ function applyLayout(index) {
 }
 
 layoutToggleBtn.addEventListener('click', () => {
+  vibrate();
   currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
   applyLayout(currentLayoutIndex);
-  log(`Вёрстка изменена на вариант ${currentLayoutIndex}`);
 });
 
 const savedLayout = localStorage.getItem('playerLayout');
@@ -848,11 +762,33 @@ if (savedLayout) {
 }
 
 // ============================================================
+//  ПЕРЕКЛЮЧЕНИЕ СТИЛЯ ЭКВАЛАЙЗЕРА
+// ============================================================
+const visualizerStyles = ['', 'style-gray', 'style-reverse', 'style-center'];
+let currentVisualizerIndex = 0;
+
+visualizer.addEventListener('click', () => {
+  visualizer.classList.remove('style-gray', 'style-reverse', 'style-center');
+  currentVisualizerIndex = (currentVisualizerIndex + 1) % visualizerStyles.length;
+  if (visualizerStyles[currentVisualizerIndex]) {
+    visualizer.classList.add(visualizerStyles[currentVisualizerIndex]);
+  }
+});
+
+// ============================================================
+//  ИСПРАВЛЕНИЕ НУМЕРАЦИИ ГЛАВ
+// ============================================================
+function extractChapterNumber(title, fallbackIndex) {
+  const match = title.match(/(?:глава|часть)\s*(\d+)/i) || title.match(/^(\d+)/);
+  if (match && match[1]) return parseInt(match[1], 10);
+  return fallbackIndex + 1;
+}
+
+// ============================================================
 //  ПАРСИНГ EPUB
 // ============================================================
 async function parseEpubFromArrayBuffer(arrayBuffer) {
   const zipLocal = await JSZip.loadAsync(arrayBuffer);
-
   const containerFile = zipLocal.file('META-INF/container.xml');
   if (!containerFile) throw new Error('Нет META-INF/container.xml');
   const containerXml = await containerFile.async('string');
@@ -986,12 +922,8 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
         chapterTextsLocal.push({ path: ch.path, text, title: chapterTitle });
         totalChars += text.length;
         displayNumber++;
-      } else {
-        log(`Пропущена служебная страница: ${ch.path} (длина: ${text.length})`);
       }
-    } catch (err) { 
-      log(`⚠️ Ошибка на файле ${ch.path}: ${err.message}`); 
-    }
+    } catch (err) { log(`⚠️ Ошибка на файле ${ch.path}: ${err.message}`); }
   }
 
   return { title, author, coverBase64, chapterTexts: chapterTextsLocal, totalChars };
@@ -1001,11 +933,8 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
 //  ПОЛКА
 // ============================================================
 function saveLibrary() {
-  try {
-    localStorage.setItem('audioLibrary', JSON.stringify(library));
-  } catch (e) {
-    alert('Не удалось сохранить: превышен лимит хранилища. Попробуйте удалить старые книги.');
-  }
+  try { localStorage.setItem('audioLibrary', JSON.stringify(library)); } 
+  catch (e) { alert('Не удалось сохранить: превышен лимит.'); }
 }
 
 function saveBookProgress() {
@@ -1018,39 +947,26 @@ function saveBookProgress() {
 
 function loadLibrary() {
   const saved = localStorage.getItem('audioLibrary');
-  if (saved) {
-    try { library = JSON.parse(saved); } catch (e) { library = []; }
-  }
+  if (saved) { try { library = JSON.parse(saved); } catch (e) { library = []; } }
 }
 
 function renderShelf() {
   bookshelf.innerHTML = '';
-  if (library.length === 0) {
-    emptyShelfMsg.style.display = 'block';
-    return;
-  }
+  if (library.length === 0) { emptyShelfMsg.style.display = 'block'; return; }
   emptyShelfMsg.style.display = 'none';
 
   for (let i = 0; i < library.length; i += 3) {
     const row = document.createElement('div');
     row.className = 'shelf-row';
-
     const chunk = library.slice(i, i + 3);
+
     chunk.forEach((book, index) => {
       const globalIndex = i + index;
       const card = document.createElement('div');
       card.className = 'book-card';
+      const coverHtml = book.coverBase64 ? `<img src="${book.coverBase64}" alt="Обложка">` : `<div class="no-cover">📖</div>`;
 
-      const coverHtml = book.coverBase64
-        ? `<img src="${book.coverBase64}" alt="Обложка">`
-        : `<div class="no-cover">📖</div>`;
-
-      card.innerHTML = `
-        <div class="book-cover-wrapper">
-          ${coverHtml}
-        </div>
-        <button class="book-delete" data-index="${globalIndex}">✕</button>
-      `;
+      card.innerHTML = `<div class="book-cover-wrapper">${coverHtml}</div><button class="book-delete" data-index="${globalIndex}">✕</button>`;
 
       card.addEventListener('click', (e) => {
         if (e.target.classList.contains('book-delete')) {
@@ -1064,16 +980,14 @@ function renderShelf() {
         }
         openBook(book);
       });
-
       row.appendChild(card);
     });
-
     bookshelf.appendChild(row);
   }
 }
 
 // ============================================================
-//  ОТКРЫТИЕ КНИГИ
+//  ОТКРЫТИЕ КНИГИ И ПЛЕЕР
 // ============================================================
 async function openBook(book) {
   currentBook = book;
@@ -1083,19 +997,12 @@ async function openBook(book) {
   readerTitle.textContent = book.title;
   readerAuthor.textContent = book.author;
 
-  if (book.coverBase64) {
-    coverContainer.innerHTML = `<img src="${book.coverBase64}" alt="Обложка">`;
-  } else {
-    coverContainer.innerHTML = `<div class="no-cover-large">📖</div>`;
-  }
+  if (book.coverBase64) coverContainer.innerHTML = `<img src="${book.coverBase64}" alt="Обложка">`;
+  else coverContainer.innerHTML = `<div class="no-cover-large">📖</div>`;
 
   try {
     chapterTexts = book.chapters || [];
-
-    if (chapterTexts.length === 0) {
-      alert('В этой книге нет текста.');
-      return;
-    }
+    if (chapterTexts.length === 0) { alert('В этой книге нет текста.'); return; }
 
     currentChapterIndex = book.currentChapterIndex || 0;
     if (currentChapterIndex >= chapterTexts.length) currentChapterIndex = 0;
@@ -1106,23 +1013,19 @@ async function openBook(book) {
     if (currentIndex >= queue.length) currentIndex = 0;
 
     updatePlayerUI();
-  } catch (err) {
-    log('Ошибка открытия: ' + err.message);
-  }
+  } catch (err) { log('Ошибка открытия: ' + err.message); }
 }
 
-// ============================================================
-//  ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
-// ============================================================
 function updatePlayerUI() {
   if (currentChapterIndex < 0 || currentChapterIndex >= chapterTexts.length) return;
   
   const currentCh = chapterTexts[currentChapterIndex];
   const titleStr = currentCh.title || `Глава ${currentChapterIndex + 1}`;
-  const counterStr = `(${currentChapterIndex + 1} из ${chapterTexts.length})`;
+  const realChapterNumber = extractChapterNumber(titleStr, currentChapterIndex);
+  const totalChapters = chapterTexts.length;
 
   chapterTitleEl.textContent = titleStr;
-  chapterCounterEl.textContent = counterStr;
+  chapterCounterEl.textContent = `(${realChapterNumber} из ${totalChapters})`;
   
   prevChapterBtn.disabled = (currentChapterIndex <= 0);
   nextChapterBtn.disabled = (currentChapterIndex >= chapterTexts.length - 1);
@@ -1147,14 +1050,10 @@ function updateTotalProgress() {
   if (totalChars === 0) return;
 
   let charsBefore = 0;
-  for (let i = 0; i < currentChapterIndex; i++) {
-    charsBefore += chapterTexts[i].text.length;
-  }
+  for (let i = 0; i < currentChapterIndex; i++) charsBefore += chapterTexts[i].text.length;
 
   let charsReadInChapter = 0;
-  for (let i = 0; i < currentIndex; i++) {
-    if (queue[i]) charsReadInChapter += queue[i].length;
-  }
+  for (let i = 0; i < currentIndex; i++) if (queue[i]) charsReadInChapter += queue[i].length;
 
   const totalRead = charsBefore + charsReadInChapter;
   const percent = Math.min(100, Math.round((totalRead / totalChars) * 100));
@@ -1220,9 +1119,7 @@ function speakNext() {
       currentIndex = 0;
       queue = [];
       updatePlayerUI();
-      if (wasPlaying) {
-        setTimeout(() => { startPlayback(); }, 1000);
-      }
+      if (wasPlaying) setTimeout(() => { startPlayback(); }, 1000);
       return;
     } else {
       log('Книга завершена!');
@@ -1317,6 +1214,11 @@ async function startPlayback() {
 }
 
 function stopPlayback() {
+  if (chunkSeekTimer) {
+    clearTimeout(chunkSeekTimer);
+    chunkSeekTimer = null;
+  }
+
   isPlaying = false;
   playStopBtn.classList.remove('playing');
   playIcon.style.display = 'block';
@@ -1334,6 +1236,8 @@ function stopPlayback() {
 }
 
 playStopBtn.addEventListener('click', () => {
+  vibrate();
+  
   if (isPlaying) {
     if (!speechSynthesis.speaking) {
       log('🔄 Пробуждение после блокировки...');
@@ -1346,14 +1250,13 @@ playStopBtn.addEventListener('click', () => {
       stopPlayback();
     }
   } else {
-    if (typeof requestWakeLock === 'function') {
-      requestWakeLock(); 
-    }
+    if (typeof requestWakeLock === 'function') requestWakeLock(); 
     startPlayback();
   }
 });
 
 prevChapterBtn.addEventListener('click', () => {
+  vibrate();
   if (currentChapterIndex > 0) {
     const wasPlaying = isPlaying;
     stopPlayback();
@@ -1367,6 +1270,7 @@ prevChapterBtn.addEventListener('click', () => {
 });
 
 nextChapterBtn.addEventListener('click', () => {
+  vibrate();
   if (currentChapterIndex < chapterTexts.length - 1) {
     const wasPlaying = isPlaying;
     stopPlayback();
@@ -1380,24 +1284,58 @@ nextChapterBtn.addEventListener('click', () => {
 });
 
 prevChunkBtn.addEventListener('click', () => {
+  vibrate();
+  if (chunkSeekTimer) clearTimeout(chunkSeekTimer);
+  const wasPlaying = isPlaying;
+
   if (currentIndex > 0) {
-    const wasPlaying = isPlaying;
-    stopPlayback();
     currentIndex--;
-    updateTotalProgress();
-    saveBookProgress();
-    if (wasPlaying) startPlayback();
+  } else if (currentChapterIndex > 0) {
+    currentChapterIndex--;
+    const text = chapterTexts[currentChapterIndex].text;
+    queue = splitIntoChunks(text, 300);
+    currentIndex = queue.length - 1;
+  } else {
+    return;
+  }
+  
+  updateTotalProgress();
+  saveBookProgress();
+  updatePlayerUI();
+
+  if (wasPlaying) {
+    chunkSeekTimer = setTimeout(() => {
+      speechSynthesis.cancel();
+      startPlayback();
+    }, 400);
   }
 });
 
 nextChunkBtn.addEventListener('click', () => {
+  vibrate();
+  if (chunkSeekTimer) clearTimeout(chunkSeekTimer);
+  const wasPlaying = isPlaying;
+
   if (currentIndex < queue.length - 1) {
-    const wasPlaying = isPlaying;
-    stopPlayback();
     currentIndex++;
-    updateTotalProgress();
-    saveBookProgress();
-    if (wasPlaying) startPlayback();
+  } else if (currentChapterIndex < chapterTexts.length - 1) {
+    currentChapterIndex++;
+    const text = chapterTexts[currentChapterIndex].text;
+    queue = splitIntoChunks(text, 300);
+    currentIndex = 0;
+  } else {
+    return;
+  }
+  
+  updateTotalProgress();
+  saveBookProgress();
+  updatePlayerUI();
+
+  if (wasPlaying) {
+    chunkSeekTimer = setTimeout(() => {
+      speechSynthesis.cancel();
+      startPlayback();
+    }, 400);
   }
 });
 
@@ -1427,10 +1365,7 @@ fileInput.addEventListener('change', async (e) => {
     const arrayBuffer = await readFileAsArrayBuffer(file);
     const parsed = await parseEpubFromArrayBuffer(arrayBuffer);
 
-    if (parsed.chapterTexts.length === 0) {
-      alert('В книге нет текста.');
-      return;
-    }
+    if (parsed.chapterTexts.length === 0) { alert('В книге нет текста.'); return; }
 
     const newBook = {
       id: Date.now().toString(),
