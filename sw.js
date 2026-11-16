@@ -1,4 +1,4 @@
-const CACHE_NAME = 'audiobook-v5'; // Меняйте на v6, v7 при каждом обновлении!
+const CACHE_NAME = 'audiobook-v5.01'; // Меняйте на v6, v7 при каждом обновлении!
 const ASSETS = [
   './',
   './index.html',
