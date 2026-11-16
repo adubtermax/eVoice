@@ -1,20 +1,17 @@
-const CACHE_NAME = 'eVoice-v3.07';
+const CACHE_NAME = 'audiobook-v5'; // Меняйте на v6, v7 при каждом обновлении!
 const ASSETS = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Установка: кэшируем основные файлы
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  self.skipWaiting(); // Сразу активируем новый SW
 });
 
-// Активация: удаляем старые кэши, если версия обновилась
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -23,13 +20,11 @@ self.addEventListener('activate', (e) => {
       );
     })
   );
+  self.clients.claim(); // Сразу берем контроль над вкладками
 });
 
-// Перехват запросов: отдаем из кэша, если есть
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
+    caches.match(e.request).then((response) => response || fetch(e.request))
   );
 });
