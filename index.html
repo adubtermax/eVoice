@@ -442,7 +442,7 @@
   @keyframes bounce-reverse { 0% { height: 10%; } 100% { height: 100%; } }
   .visualizer.style-center { align-items: center; }
   .visualizer.style-center .bar { animation-name: bounce-center; }
-  @keyframes bounce-center { 0% { height: 20%; } 100% { height: 80%; } }
+  @keyframes bounce-center { 0% { height: 10%; } 100% { height: 100%; } }
   @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
 
   /* ============================================================
@@ -528,7 +528,7 @@
     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
   </button>
   
-  <input type="file" id="fileInput" accept=".epub,.pdf,.fb2">
+  <input type="file" id="fileInput" accept=".epub,.pdf,.fb2,.zip">
 </div>
 
 <!-- ЭКРАН ПЛЕЕРА -->
@@ -1005,8 +1005,9 @@ function generatePdfCover(titleText) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const words = titleText.split(' ').slice(0, 3).join(' ');
-  const displayText = words.length > 20 ? words.substring(0, 18) + '...' : words;
+  // Берем первые 15 символов, чтобы точно влезло
+  let displayText = titleText.trim();
+  if (displayText.length > 15) displayText = displayText.substring(0, 15) + '...';
 
   const maxWidth = 300;
   const lines = [];
@@ -1060,7 +1061,13 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
 
   const metadata = await pdf.getMetadata().catch(() => null);
   const info = metadata ? metadata.info : {};
-  const rawTitle = info.Title || fileName.replace('.pdf', '');
+  
+  // Запасной вариант для названия
+  let rawTitle = info.Title || fileName.replace('.pdf', '');
+  if (!rawTitle || rawTitle.trim() === '') {
+    rawTitle = 'PDF Документ';
+  }
+  
   const coverBase64 = generatePdfCover(rawTitle);
   
   return {
@@ -1074,11 +1081,34 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
 
 // --- FB2 ---
 async function parseFb2FromFile(file) {
-  // Читаем как ArrayBuffer -> Uint8Array, чтобы парсер мог распаковать ZIP
-  const arrayBuffer = await file.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer);
+  let fb2ArrayBuffer;
 
+  if (file.name.toLowerCase().endsWith('.zip')) {
+    log('Обнаружен ZIP-контейнер. Распаковываем...');
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    
+    let fb2FileEntry = null;
+    for (const [filename, entry] of Object.entries(zip.files)) {
+      if (!entry.dir && filename.toLowerCase().endsWith('.fb2')) {
+        fb2FileEntry = entry;
+        break;
+      }
+    }
+
+    if (!fb2FileEntry) {
+      throw new Error('В ZIP-архиве не найден файл .fb2');
+    }
+
+    fb2ArrayBuffer = await fb2FileEntry.async('arraybuffer');
+    log(`Извлечен файл: ${fb2FileEntry.name}`);
+  } else {
+    fb2ArrayBuffer = await file.arrayBuffer();
+  }
+
+  const uint8Array = new Uint8Array(fb2ArrayBuffer);
   const fb2 = await window.lingoReaderFb2Parser.initFb2File(uint8Array);
+  
   const spine = fb2.getSpine();
   const chapterTextsLocal = [];
   let totalChars = 0;
@@ -1152,7 +1182,6 @@ function renderShelf() {
       const badgeClass = book.fileType || 'epub';
       const badgeText = badgeClass.toUpperCase();
 
-      // Индикатор прогресса
       let progressPercent = 0;
       if (book.chapters && book.chapters.length > 0) {
         progressPercent = Math.round((book.currentChapterIndex / book.chapters.length) * 100);
@@ -1583,7 +1612,7 @@ fileInput.addEventListener('change', async (e) => {
     if (fileExt === 'pdf') {
       fileType = 'pdf';
       parsed = await parsePdfFromArrayBuffer(arrayBuffer, file.name);
-    } else if (fileExt === 'fb2') {
+    } else if (fileExt === 'fb2' || fileExt === 'zip') {
       fileType = 'fb2';
       parsed = await parseFb2FromFile(file);
     } else {
