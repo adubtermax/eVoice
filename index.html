@@ -40,6 +40,7 @@
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #1a1511 0%, #0d0a08 100%);
+    position: relative;
   }
   
   .header {
@@ -200,6 +201,16 @@
   .fab svg { width: 30px; height: 30px; fill: currentColor; }
 
   .empty-msg { color: var(--text-muted); text-align: center; margin-top: 50px; font-size: 16px; }
+
+  /* Версия приложения */
+  .app-version {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 0 30px 0;
+    margin-top: auto;
+    opacity: 0.5;
+  }
 
   /* ---------- Экран плеера ---------- */
   #playerScreen {
@@ -523,6 +534,8 @@
 
   <div class="shelf-container" id="bookshelf"></div>
   <p class="empty-msg" id="emptyShelfMsg" style="display:none;">Полка пуста.<br>Нажмите +, чтобы добавить книгу.</p>
+  
+  <div class="app-version">Версия приложения: <span id="appVersionLabel">Загрузка...</span></div>
 
   <button class="fab" id="uploadBtn">
     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
@@ -614,7 +627,6 @@
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@lingo-reader/fb2-parser@0.4.6/dist/index.umd.js"></script>
 
 <script>
 // ============================================================
@@ -646,6 +658,7 @@ const chapterTitleEl = document.getElementById('chapterTitle');
 const chapterCounterEl = document.getElementById('chapterCounter');
 const currentTextDisplay = document.getElementById('currentTextDisplay');
 const pocketPlayBtn = document.getElementById('pocketPlayBtn');
+const appVersionLabel = document.getElementById('appVersionLabel');
 
 // ============================================================
 //  СОСТОЯНИЕ
@@ -669,6 +682,17 @@ function log(msg) { logEl.textContent += '\n' + msg; console.log(msg); }
 
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// --- Получение версии из SW ---
+function fetchAppVersion() {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    // Если SW уже контролирует страницу, мы можем попробовать узнать версию из кэша
+    // Но проще вывести версию, которую мы знаем в JS
+    appVersionLabel.textContent = window.APP_VERSION || "1.0";
+  } else {
+    appVersionLabel.textContent = window.APP_VERSION || "1.0";
+  }
 }
 
 // --- Wake Lock ---
@@ -837,7 +861,7 @@ function extractChapterNumber(title, fallbackIndex) {
 }
 
 // ============================================================
-//  ПАРСИНГ
+//  ПАРСИНГ EPUB
 // ============================================================
 async function parseEpubFromArrayBuffer(arrayBuffer) {
   const zipLocal = await JSZip.loadAsync(arrayBuffer);
@@ -981,7 +1005,9 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
   return { title, author, coverBase64, chapterTexts: chapterTextsLocal, totalChars };
 }
 
-// --- PDF ---
+// ============================================================
+//  ПАРСИНГ PDF
+// ============================================================
 function generatePdfCover(titleText) {
   const canvas = document.createElement('canvas');
   canvas.width = 400;
@@ -1062,7 +1088,6 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
   const metadata = await pdf.getMetadata().catch(() => null);
   const info = metadata ? metadata.info : {};
   
-  // Запасной вариант для названия
   let rawTitle = info.Title || fileName.replace('.pdf', '');
   if (!rawTitle || rawTitle.trim() === '') {
     rawTitle = 'PDF Документ';
@@ -1079,10 +1104,13 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
   };
 }
 
-// --- FB2 ---
+// ============================================================
+//  ПАРСИНГ FB2 (Свой XML-парсер)
+// ============================================================
 async function parseFb2FromFile(file) {
-  let fb2ArrayBuffer;
+  let fb2Text;
 
+  // Если это ZIP-архив, распаковываем его
   if (file.name.toLowerCase().endsWith('.zip')) {
     log('Обнаружен ZIP-контейнер. Распаковываем...');
     const arrayBuffer = await file.arrayBuffer();
@@ -1100,45 +1128,75 @@ async function parseFb2FromFile(file) {
       throw new Error('В ZIP-архиве не найден файл .fb2');
     }
 
-    fb2ArrayBuffer = await fb2FileEntry.async('arraybuffer');
+    fb2Text = await fb2FileEntry.async('string');
     log(`Извлечен файл: ${fb2FileEntry.name}`);
   } else {
-    fb2ArrayBuffer = await file.arrayBuffer();
+    fb2Text = await file.text();
   }
 
-  const uint8Array = new Uint8Array(fb2ArrayBuffer);
-  const fb2 = await window.lingoReaderFb2Parser.initFb2File(uint8Array);
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(fb2Text, 'text/xml');
   
-  const spine = fb2.getSpine();
+  if (xmlDoc.querySelector('parsererror')) {
+    throw new Error('Ошибка парсинга XML в FB2 файле');
+  }
+
+  const titleEl = xmlDoc.querySelector('title-info > book-title');
+  const authorEl = xmlDoc.querySelector('title-info > author > first-name');
+  const lastNameEl = xmlDoc.querySelector('title-info > author > last-name');
+  
+  const title = titleEl ? titleEl.textContent.trim() : 'FB2 Книга';
+  const author = authorEl ? `${authorEl.textContent.trim()} ${lastNameEl ? lastNameEl.textContent.trim() : ''}`.trim() : 'Неизвестный автор';
+
+  let coverBase64 = null;
+  const coverEl = xmlDoc.querySelector('coverpage > image');
+  if (coverEl) {
+    const href = coverEl.getAttribute('xlink:href')?.replace('#', '');
+    if (href) {
+      const binaryEl = xmlDoc.getElementById(href);
+      if (binaryEl && binaryEl.textContent) {
+        const contentType = binaryEl.getAttribute('content-type') || 'image/jpeg';
+        coverBase64 = `data:${contentType};base64,${binaryEl.textContent.trim()}`;
+      }
+    }
+  }
+
   const chapterTextsLocal = [];
   let totalChars = 0;
+  const sections = xmlDoc.querySelectorAll('body > section');
 
-  for (let i = 0; i < spine.length; i++) {
-    const chapterId = spine[i].id;
-    const chapterData = fb2.loadChapter(chapterId);
-    
-    if (!chapterData || !chapterData.html) continue;
+  if (sections.length > 0) {
+    sections.forEach((section, index) => {
+      const paragraphs = section.querySelectorAll('p');
+      let text = Array.from(paragraphs).map(p => p.textContent.trim()).join(' ');
+      text = text.replace(/\s+/g, ' ').trim();
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(chapterData.html, 'text/html');
-    let text = doc.body.textContent || '';
+      if (text.length > 20) {
+        const sectionTitle = section.querySelector('title > p')?.textContent.trim();
+        chapterTextsLocal.push({
+          path: `fb2_section_${index}`,
+          text: text,
+          title: sectionTitle || `Глава ${index + 1}`
+        });
+        totalChars += text.length;
+      }
+    });
+  } else {
+    const paragraphs = xmlDoc.querySelectorAll('body > p');
+    let text = Array.from(paragraphs).map(p => p.textContent.trim()).join(' ');
     text = text.replace(/\s+/g, ' ').trim();
-
     if (text.length > 20) {
-      chapterTextsLocal.push({ path: `fb2_${chapterId}`, text: text, title: `Глава ${i + 1}` });
+      chapterTextsLocal.push({ path: 'fb2_body', text: text, title: 'Текст книги' });
       totalChars += text.length;
     }
   }
 
-  const metadata = fb2.getMetadata ? fb2.getMetadata() : {};
-  const cover = fb2.getCoverImage ? fb2.getCoverImage() : null;
-
   return {
-    title: metadata.title || 'FB2 Книга',
-    author: metadata.author || 'Неизвестный автор',
-    coverBase64: cover,
+    title,
+    author,
+    coverBase64,
     chapterTexts: chapterTextsLocal,
-    totalChars: totalChars
+    totalChars
   };
 }
 
@@ -1247,8 +1305,6 @@ async function openBook(book) {
     if (currentIndex >= queue.length) currentIndex = 0;
 
     updatePlayerUI();
-    
-    // АВТОВОСПРОИЗВЕДЕНИЕ
     startPlayback(); 
   } catch (err) { log('Ошибка открытия: ' + err.message); }
 }
@@ -1652,6 +1708,9 @@ fileInput.addEventListener('change', async (e) => {
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
+window.APP_VERSION = "0.5.4"; // Меняйте эту цифру при обновлениях
+fetchAppVersion();
+
 loadLibrary();
 renderShelf();
 </script>
