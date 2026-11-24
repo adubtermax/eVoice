@@ -56,7 +56,6 @@
   .header-top { display: flex; justify-content: space-between; align-items: center; }
   .header-title { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   
-  /* Стили для сортировки */
   .sort-select {
     background: transparent;
     color: var(--text-muted);
@@ -73,7 +72,7 @@
   .sort-select option { background: #1e1e1e; color: #fff; }
 
   .shelf-container {
-    padding: 20px 15px 100px 15px;
+    padding: 20px 15px 120px 15px; /* Увеличен нижний отступ для версии */
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -216,14 +215,17 @@
 
   .empty-msg { color: var(--text-muted); text-align: center; margin-top: 50px; font-size: 16px; }
 
-  /* Версия приложения */
+  /* Версия приложения (фиксирована внизу) */
   .app-version {
+    position: absolute;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
     text-align: center;
     font-size: 12px;
     color: var(--text-muted);
-    padding: 10px 0 30px 0;
-    margin-top: auto;
     opacity: 0.5;
+    pointer-events: none;
   }
 
   /* ---------- Экран плеера ---------- */
@@ -277,7 +279,6 @@
     filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));
   }
   
-  /* Активный таймер */
   .icon-box-btn.timer-active {
     color: var(--accent);
     box-shadow: 
@@ -360,11 +361,17 @@
     display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
     min-height: 32px; align-items: center;
   }
-  .speed-text-label {
-    font-size: 14px; color: var(--text-muted); font-weight: 500;
-    background: var(--surface); padding: 6px 16px; border-radius: 20px;
+  
+  /* Кнопка скорости (одна) */
+  .speed-btn {
+    background: var(--surface); color: var(--text-muted);
+    border: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 20px;
+    padding: 6px 16px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    display: flex; align-items: center; justify-content: center;
   }
-  .speed-text-label span { color: var(--text); font-weight: 600; }
+  .speed-btn:active { background: rgba(255,255,255,0.15); }
 
   .player-controls {
     display: flex; align-items: center; justify-content: space-between;
@@ -373,7 +380,7 @@
     padding: 10px 0;
   }
   
-  .speed-btn, .chapter-btn, .play-btn {
+  .chapter-btn, .play-btn {
     background: #252525;
     border: none;
     cursor: pointer;
@@ -388,14 +395,13 @@
     transition: all 0.2s ease;
     color: var(--text);
   }
-  .speed-btn:active, .chapter-btn:active, .play-btn:active {
+  .chapter-btn:active, .play-btn:active {
     box-shadow: inset -6px -6px 12px rgba(255, 255, 255, 0.08), inset 6px 6px 15px rgba(0, 0, 0, 1);
     transform: scale(0.94);
   }
   .chapter-btn { width: 48px; height: 48px; }
   .chapter-btn svg { width: 20px; height: 20px; fill: currentColor; filter: drop-shadow(0 0 3px rgba(255,255,255,0.4)); }
   .chapter-btn:disabled { opacity: 0.2; box-shadow: none; }
-  .speed-btn { width: 40px; height: 40px; font-size: 20px; font-weight: 600; }
   
   .play-btn {
     width: 76px;
@@ -413,7 +419,7 @@
 
   #fileInput, #log { display: none; }
 
-  /* Невидимая кнопка для режима "Карман" (Низ - Play/Stop) */
+  /* Невидимые кнопки для режима "Карман" */
   .pocket-play-overlay {
     display: none;
     position: absolute;
@@ -430,8 +436,6 @@
     outline: none;
     -webkit-tap-highlight-color: transparent;
   }
-
-  /* Невидимая кнопка по центру (Смена режима) */
   .pocket-layout-overlay {
     display: none;
     position: absolute;
@@ -445,6 +449,107 @@
     cursor: pointer;
     outline: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ============================================================
+     НИЖНИЕ МЕНЮ (BOTTOM SHEETS)
+     ============================================================ */
+  .bottom-sheet-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .bottom-sheet-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .bottom-sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #2a2a2a;
+    border-radius: 24px 24px 0 0;
+    padding: 20px;
+    z-index: 1001;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .bottom-sheet.active {
+    transform: translateY(0);
+  }
+
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .sheet-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  /* Меню таймера */
+  .timer-options {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    gap: 10px;
+  }
+  .timer-option {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: var(--text);
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .timer-option:active { background: rgba(255,255,255,0.15); }
+  .timer-option.active { background: var(--accent); color: #121212; }
+
+  /* Меню скорости */
+  .speed-options {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    width: 100%;
+    padding: 10px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .speed-options::-webkit-scrollbar { display: none; }
+  
+  .speed-option {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    font-weight: 600;
+    padding: 10px 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .speed-option.active {
+    color: var(--text);
+    font-size: 32px;
   }
 
   /* ============================================================
@@ -496,7 +601,7 @@
   @keyframes bounce { 0% { height: 10%; } 100% { height: 100%; } }
 
   /* ============================================================
-     ТЕКУЩИЙ ТЕКСТ (Оформлен как карточка)
+     ТЕКУЩИЙ ТЕКСТ
      ============================================================ */
   .current-text-display {
     display: none;
@@ -549,10 +654,9 @@
     .player-top { max-width: 460px; margin: 0 auto; width: 100%; }
     #playerScreen:not(.layout-compact):not(.layout-visual) .player-center { max-width: 400px; margin: 0 auto; }
     #playerScreen.layout-compact .player-center { max-width: 460px; margin: 0 auto; }
-    .speed-btn:hover, .chapter-btn:hover, .play-btn:hover, .icon-box-btn:hover {
-      box-shadow: -8px -8px 15px rgba(255, 255, 255, 0.15), 8px 8px 20px rgba(0, 0, 0, 1), inset 0 2px 2px rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-    }
+    
+    .bottom-sheet { max-width: 500px; left: 50%; transform: translate(-50%, 100%); }
+    .bottom-sheet.active { transform: translate(-50%, 0); }
   }
 
 </style>
@@ -596,13 +700,13 @@
       <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
     </div>
     
-    <!-- Кнопка таймера справа -->
-    <div class="icon-box-btn" id="sleepTimerBtn" title="Таймер сна" style="position: relative;">
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-      </svg>
-      <span id="sleepTimerText" style="position: absolute; font-size: 10px; font-weight: bold; bottom: -20px; color: var(--text-muted); display: none; white-space: nowrap;"></span>
+    <div class="top-right-buttons">
+      <div class="icon-box-btn" id="sleepTimerBtn" title="Таймер сна">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
     </div>
   </div>
 
@@ -634,7 +738,9 @@
       <div class="progress-bar-fill" id="progressBarFill"></div>
     </div>
 
-    <div class="info-panel" id="infoPanel"></div>
+    <div class="info-panel" id="infoPanel">
+      <!-- Кнопка скорости будет здесь -->
+    </div>
     
     <div class="player-controls">
       <button class="chapter-btn" id="prevChapterBtn" title="Предыдущая глава">
@@ -663,6 +769,30 @@
   <!-- Невидимые кнопки для режима "Карман" -->
   <button id="pocketLayoutBtn" class="pocket-layout-overlay" title="Сменить режим"></button>
   <button id="pocketPlayBtn" class="pocket-play-overlay" title="Play/Stop"></button>
+</div>
+
+<!-- НИЖНИЕ МЕНЮ -->
+<div class="bottom-sheet-overlay" id="sheetOverlay"></div>
+
+<!-- Меню таймера сна -->
+<div class="bottom-sheet" id="timerSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Таймер сна</div>
+  <div class="timer-options">
+    <button class="timer-option" data-minutes="15">15 минут</button>
+    <button class="timer-option" data-minutes="30">30 минут</button>
+    <button class="timer-option" data-minutes="60">60 минут</button>
+    <button class="timer-option" data-minutes="0">Выключить</button>
+  </div>
+</div>
+
+<!-- Меню скорости -->
+<div class="bottom-sheet" id="speedSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Скорость</div>
+  <div class="speed-options" id="speedOptionsContainer">
+    <!-- Заполняется через JS -->
+  </div>
 </div>
 
 <div id="log"></div>
@@ -699,7 +829,6 @@ const playIcon = document.getElementById('playIcon');
 const stopIcon = document.getElementById('stopIcon');
 const logEl = document.getElementById('log');
 const sleepTimerBtn = document.getElementById('sleepTimerBtn');
-const sleepTimerText = document.getElementById('sleepTimerText');
 const visualizer = document.getElementById('visualizer');
 const chapterTitleEl = document.getElementById('chapterTitle');
 const chapterCounterEl = document.getElementById('chapterCounter');
@@ -708,6 +837,12 @@ const pocketPlayBtn = document.getElementById('pocketPlayBtn');
 const pocketLayoutBtn = document.getElementById('pocketLayoutBtn');
 const appVersionLabel = document.getElementById('appVersionLabel');
 const sortSelect = document.getElementById('sortSelect');
+
+// Bottom Sheets
+const sheetOverlay = document.getElementById('sheetOverlay');
+const timerSheet = document.getElementById('timerSheet');
+const speedSheet = document.getElementById('speedSheet');
+const speedOptionsContainer = document.getElementById('speedOptionsContainer');
 
 // ============================================================
 //  СОСТОЯНИЕ
@@ -724,7 +859,7 @@ let currentUtterance = null;
 let wakeLock = null;
 let chunkSeekTimer = null;
 let sleepTimerId = null;
-let sleepTimerState = 0; // 0=Off, 1=15m, 2=30m, 3=60m
+let sleepTimerState = 0;
 
 // ============================================================
 //  УТИЛИТЫ
@@ -735,51 +870,100 @@ function vibrate() {
   if (navigator.vibrate) navigator.vibrate(30);
 }
 
+// --- Управление Bottom Sheets ---
+function openSheet(sheet) {
+  sheetOverlay.classList.add('active');
+  sheet.classList.add('active');
+}
+
+function closeSheets() {
+  sheetOverlay.classList.remove('active');
+  timerSheet.classList.remove('active');
+  speedSheet.classList.remove('active');
+}
+
+sheetOverlay.addEventListener('click', closeSheets);
+
 // --- Таймер сна ---
-function handleSleepTimer() {
+sleepTimerBtn.addEventListener('click', () => {
   vibrate();
-  sleepTimerState = (sleepTimerState + 1) % 4;
-  
-  if (sleepTimerId) {
-    clearTimeout(sleepTimerId);
-    sleepTimerId = null;
-  }
+  openSheet(timerSheet);
+});
 
-  if (sleepTimerState === 0) {
-    sleepTimerBtn.classList.remove('timer-active');
-    if (sleepTimerText) sleepTimerText.style.display = 'none';
-    log('Таймер сна выключен');
-  } else {
-    let minutes = 0;
-    if (sleepTimerState === 1) minutes = 15;
-    if (sleepTimerState === 2) minutes = 30;
-    if (sleepTimerState === 3) minutes = 60;
-
-    sleepTimerBtn.classList.add('timer-active');
-    if (sleepTimerText) {
-      sleepTimerText.textContent = `${minutes} мин`;
-      sleepTimerText.style.display = 'block';
-      sleepTimerText.style.color = 'var(--accent)';
+document.querySelectorAll('.timer-option').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const minutes = parseInt(e.target.getAttribute('data-minutes'));
+    sleepTimerState = minutes;
+    
+    if (sleepTimerId) {
+      clearTimeout(sleepTimerId);
+      sleepTimerId = null;
     }
 
-    log(`Таймер сна установлен на ${minutes} мин.`);
-    
-    sleepTimerId = setTimeout(() => {
-      log('Таймер сна сработал. Останавливаем чтение.');
-      stopPlayback();
-      sleepTimerState = 0;
+    if (minutes === 0) {
       sleepTimerBtn.classList.remove('timer-active');
-      if (sleepTimerText) sleepTimerText.style.display = 'none';
-    }, minutes * 60 * 1000);
-  }
+      log('Таймер сна выключен');
+    } else {
+      sleepTimerBtn.classList.add('timer-active');
+      log(`Таймер сна установлен на ${minutes} мин.`);
+      
+      sleepTimerId = setTimeout(() => {
+        log('Таймер сна сработал. Останавливаем чтение.');
+        stopPlayback();
+        sleepTimerState = 0;
+        sleepTimerBtn.classList.remove('timer-active');
+      }, minutes * 60 * 1000);
+    }
+    closeSheets();
+  });
+});
+
+// --- Скорость ---
+function updateSpeedUI() {
+  const speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
+  
+  infoPanel.innerHTML = '';
+  const speedBtn = document.createElement('button');
+  speedBtn.className = 'speed-btn';
+  speedBtn.textContent = `${speed.toFixed(1)}x`;
+  speedBtn.onclick = () => {
+    vibrate();
+    openSheet(speedSheet);
+    renderSpeedOptions();
+  };
+  infoPanel.appendChild(speedBtn);
+
+  document.querySelectorAll('.speed-option').forEach(btn => {
+    btn.classList.toggle('active', parseFloat(btn.getAttribute('data-speed')) === speed);
+  });
 }
 
-sleepTimerBtn.addEventListener('click', handleSleepTimer);
-
-// --- Получение версии ---
-function fetchAppVersion() {
-  appVersionLabel.textContent = window.APP_VERSION || "1.0";
+function renderSpeedOptions() {
+  speedOptionsContainer.innerHTML = '';
+  const currentSpeed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
+  const speeds = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0];
+  
+  speeds.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'speed-option' + (s === currentSpeed ? ' active' : '');
+    btn.setAttribute('data-speed', s);
+    btn.textContent = `${s.toFixed(1)}x`;
+    btn.addEventListener('click', () => {
+      vibrate();
+      localStorage.setItem('playerSpeed', s.toFixed(1));
+      updateSpeedUI();
+      
+      if (isPlaying) {
+        speechSynthesis.cancel();
+        setTimeout(() => { if (isPlaying) speakNext(); }, 100);
+      }
+      closeSheets();
+    });
+    speedOptionsContainer.appendChild(btn);
+  });
 }
+
+updateSpeedUI();
 
 // --- Wake Lock ---
 async function requestWakeLock() {
@@ -835,50 +1019,11 @@ function resolvePath(base, relative) {
 }
 
 // ============================================================
-//  СКОРОСТЬ
+//  ГОЛОСА
 // ============================================================
-function updateInfoPanel() {
-  infoPanel.innerHTML = '';
-  const speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
-
-  const speedContainer = document.createElement('div');
-  speedContainer.style.display = 'flex'; speedContainer.style.alignItems = 'center';
-  speedContainer.style.gap = '10px'; speedContainer.style.background = 'var(--surface)';
-  speedContainer.style.padding = '4px 12px'; speedContainer.style.borderRadius = '20px';
-
-  const minusBtn = document.createElement('button');
-  minusBtn.className = 'speed-btn'; minusBtn.textContent = '−';
-  minusBtn.style.fontSize = '18px'; minusBtn.style.width = '24px'; minusBtn.style.height = '24px';
-  minusBtn.onclick = () => changeSpeed(-0.1);
-
-  const speedText = document.createElement('span');
-  speedText.id = 'speedVal'; speedText.style.fontSize = '14px'; speedText.style.fontWeight = '600';
-  speedText.style.minWidth = '35px'; speedText.style.textAlign = 'center';
-  speedText.textContent = speed.toFixed(1) + 'x';
-
-  const plusBtn = document.createElement('button');
-  plusBtn.className = 'speed-btn'; plusBtn.textContent = '+';
-  plusBtn.style.fontSize = '18px'; plusBtn.style.width = '24px'; plusBtn.style.height = '24px';
-  plusBtn.onclick = () => changeSpeed(0.1);
-
-  speedContainer.appendChild(minusBtn);
-  speedContainer.appendChild(speedText);
-  speedContainer.appendChild(plusBtn);
-  infoPanel.appendChild(speedContainer);
-}
-
-function changeSpeed(delta) {
-  let speed = parseFloat(localStorage.getItem('playerSpeed') || '1.0');
-  speed = Math.min(2.0, Math.max(0.5, speed + delta));
-  localStorage.setItem('playerSpeed', speed.toFixed(1));
-  const speedSpan = document.getElementById('speedVal');
-  if (speedSpan) speedSpan.textContent = speed.toFixed(1) + 'x';
-}
-
 function loadVoices() {
   const allVoices = speechSynthesis.getVoices();
   russianVoices = allVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ru'));
-  updateInfoPanel();
 }
 
 speechSynthesis.onvoiceschanged = () => loadVoices();
@@ -911,24 +1056,14 @@ function applyLayout(index) {
   }
 }
 
-// Тап по пустой области экрана переключает режимы (кроме "Кармана" и кнопок)
-playerScreen.addEventListener('click', (e) => {
-  if (e.target.closest('button') || 
-      e.target.closest('select') || 
-      e.target.closest('input') || 
-      e.target.closest('.player-controls') ||
-      e.target.closest('.bottom-panel') ||
-      e.target.closest('.visualizer')) {
-    return; 
-  }
+// Переключение по тапу на обложку
+coverContainer.addEventListener('click', () => {
   if (playerScreen.classList.contains('layout-pocket')) return;
-
   vibrate();
   currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
   applyLayout(currentLayoutIndex);
 });
 
-// Восстанавливаем сохраненный режим
 const savedLayout = localStorage.getItem('playerLayout');
 if (savedLayout) {
   currentLayoutIndex = parseInt(savedLayout, 10);
@@ -1459,8 +1594,14 @@ function updatePlayerUI() {
   nextChapterBtn.disabled = (currentChapterIndex >= chapterTexts.length - 1);
 
   if (currentTextDisplay) {
-    currentTextDisplay.textContent = '';
-    currentTextDisplay.style.display = 'none';
+    if (playerScreen.classList.contains('layout-compact') && queue.length > 0) {
+      currentTextDisplay.style.display = 'block';
+      currentTextDisplay.textContent = queue[0];
+      currentTextDisplay.scrollTop = currentTextDisplay.scrollHeight;
+    } else {
+      currentTextDisplay.style.display = 'none';
+      currentTextDisplay.textContent = '';
+    }
   }
 
   updateTotalProgress();
@@ -1656,11 +1797,6 @@ function stopPlayback() {
   saveBookProgress();
   
   if (visualizer) visualizer.classList.remove('playing');
-  
-  if (currentTextDisplay) {
-    currentTextDisplay.textContent = '';
-    currentTextDisplay.style.display = 'none';
-  }
 }
 
 playStopBtn.addEventListener('click', () => {
@@ -1848,8 +1984,8 @@ fileInput.addEventListener('change', async (e) => {
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-window.APP_VERSION = "1.9"; // Меняйте эту цифру при обновлениях
-fetchAppVersion();
+window.APP_VERSION = "2.0"; // Меняйте эту цифру при обновлениях
+appVersionLabel.textContent = window.APP_VERSION;
 
 loadLibrary();
 renderShelf();
@@ -1861,13 +1997,11 @@ renderShelf();
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => {
-          // Проверяем обновления при возврате в приложение
           document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
               reg.update();
             }
           });
-          // Перезагружаем страницу, если SW обновился
           navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (navigator.serviceWorker.controller) {
               window.location.reload();
