@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#121212">
-<title>Аудиокнига</title>
+<title>eVoice</title>
 <style>
   /* ---------- Базовые стили ---------- */
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -246,8 +246,6 @@
     z-index: 10;
   }
   
-  .top-right-buttons { display: flex; gap: 10px; }
-
   .icon-box-btn {
     width: 48px;
     height: 48px;
@@ -598,22 +596,13 @@
       <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
     </div>
     
-    <div class="top-right-buttons">
-      <div class="icon-box-btn" id="sleepTimerBtn" title="Таймер сна">
-        <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-      </div>
-      
-      <div class="icon-box-btn" id="layoutToggleBtn" title="Сменить вид">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="3" width="7" height="9" rx="1"></rect>
-          <rect x="14" y="3" width="7" height="5" rx="1"></rect>
-          <rect x="14" y="12" width="7" height="9" rx="1"></rect>
-          <rect x="3" y="16" width="7" height="5" rx="1"></rect>
-        </svg>
-      </div>
+    <!-- Кнопка таймера справа -->
+    <div class="icon-box-btn" id="sleepTimerBtn" title="Таймер сна" style="position: relative;">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span id="sleepTimerText" style="position: absolute; font-size: 10px; font-weight: bold; bottom: -20px; color: var(--text-muted); display: none; white-space: nowrap;"></span>
     </div>
   </div>
 
@@ -709,8 +698,8 @@ const playStopBtn = document.getElementById('playStopBtn');
 const playIcon = document.getElementById('playIcon');
 const stopIcon = document.getElementById('stopIcon');
 const logEl = document.getElementById('log');
-const layoutToggleBtn = document.getElementById('layoutToggleBtn');
 const sleepTimerBtn = document.getElementById('sleepTimerBtn');
+const sleepTimerText = document.getElementById('sleepTimerText');
 const visualizer = document.getElementById('visualizer');
 const chapterTitleEl = document.getElementById('chapterTitle');
 const chapterCounterEl = document.getElementById('chapterCounter');
@@ -758,6 +747,7 @@ function handleSleepTimer() {
 
   if (sleepTimerState === 0) {
     sleepTimerBtn.classList.remove('timer-active');
+    if (sleepTimerText) sleepTimerText.style.display = 'none';
     log('Таймер сна выключен');
   } else {
     let minutes = 0;
@@ -766,6 +756,12 @@ function handleSleepTimer() {
     if (sleepTimerState === 3) minutes = 60;
 
     sleepTimerBtn.classList.add('timer-active');
+    if (sleepTimerText) {
+      sleepTimerText.textContent = `${minutes} мин`;
+      sleepTimerText.style.display = 'block';
+      sleepTimerText.style.color = 'var(--accent)';
+    }
+
     log(`Таймер сна установлен на ${minutes} мин.`);
     
     sleepTimerId = setTimeout(() => {
@@ -773,6 +769,7 @@ function handleSleepTimer() {
       stopPlayback();
       sleepTimerState = 0;
       sleepTimerBtn.classList.remove('timer-active');
+      if (sleepTimerText) sleepTimerText.style.display = 'none';
     }, minutes * 60 * 1000);
   }
 }
@@ -889,7 +886,7 @@ loadVoices();
 setTimeout(loadVoices, 500);
 
 // ============================================================
-//  ВЁРСТКА
+//  ВЁРСТКА И ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
 // ============================================================
 const layouts = ['', 'layout-compact', 'layout-visual', 'layout-pocket'];
 let currentLayoutIndex = 0;
@@ -914,12 +911,24 @@ function applyLayout(index) {
   }
 }
 
-layoutToggleBtn.addEventListener('click', () => {
+// Тап по пустой области экрана переключает режимы (кроме "Кармана" и кнопок)
+playerScreen.addEventListener('click', (e) => {
+  if (e.target.closest('button') || 
+      e.target.closest('select') || 
+      e.target.closest('input') || 
+      e.target.closest('.player-controls') ||
+      e.target.closest('.bottom-panel') ||
+      e.target.closest('.visualizer')) {
+    return; 
+  }
+  if (playerScreen.classList.contains('layout-pocket')) return;
+
   vibrate();
   currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
   applyLayout(currentLayoutIndex);
 });
 
+// Восстанавливаем сохраненный режим
 const savedLayout = localStorage.getItem('playerLayout');
 if (savedLayout) {
   currentLayoutIndex = parseInt(savedLayout, 10);
@@ -1108,7 +1117,8 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
   const chapterTextsLocal = [];
   let displayNumber = 1;
   let totalChars = 0;
-  const chapterRegex = /^(глава|часть|пролог|эпилог|книга)\s*[0-9ivxlc]+/i;
+  let hasSeenRealChapter = false;
+  const chapterRegex = /^(глава|часть|пролог|эпилог|книга|сцена|акт)\s*[0-9ivxlc]+/i;
 
   for (const ch of chapters) {
     try {
@@ -1122,10 +1132,18 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
       const isLargeText = text.length > 1000;
 
       if (isChapterStart || isLargeText) {
-        const chapterTitle = toc[ch.path] || `Глава ${displayNumber}`;
+        let chapterTitle = toc[ch.path] || `Глава ${displayNumber}`;
+        
+        if (!hasSeenRealChapter && !chapterRegex.test(chapterTitle.toLowerCase())) {
+          chapterTitle = 'Вступление';
+        } else {
+          hasSeenRealChapter = true;
+        }
+
         chapterTextsLocal.push({ path: ch.path, text, title: chapterTitle });
         totalChars += text.length;
-        displayNumber++;
+        
+        if (hasSeenRealChapter) displayNumber++;
       }
     } catch (err) { log(`⚠️ Ошибка на файле ${ch.path}: ${err.message}`); }
   }
@@ -1150,7 +1168,8 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
     pageText = pageText.replace(/\s+/g, ' ').trim();
 
     if (pageText.length > 20) {
-      chapterTextsLocal.push({ path: `page_${i}`, text: pageText, title: `Страница ${i}` });
+      let pageTitle = (i <= 3) ? `Информация ${i}` : `Страница ${i}`;
+      chapterTextsLocal.push({ path: `page_${i}`, text: pageText, title: pageTitle });
       totalChars += pageText.length;
     }
   }
@@ -1175,7 +1194,7 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
 }
 
 // ============================================================
-//  ПАРСИНГ FB2 (Свой XML-парсер)
+//  ПАРСИНГ FB2
 // ============================================================
 async function parseFb2FromFile(file) {
   let fb2Text;
@@ -1217,7 +1236,6 @@ async function parseFb2FromFile(file) {
   const title = titleEl ? titleEl.textContent.trim() : 'FB2 Книга';
   const author = authorEl ? `${authorEl.textContent.trim()} ${lastNameEl ? lastNameEl.textContent.trim() : ''}`.trim() : 'Неизвестный автор';
 
-  // --- Поиск обложки ---
   let coverBase64 = null;
   const coverEl = xmlDoc.querySelector('coverpage image');
   
@@ -1242,6 +1260,9 @@ async function parseFb2FromFile(file) {
 
   const chapterTextsLocal = [];
   let totalChars = 0;
+  let hasSeenRealChapter = false;
+  const chapterRegex = /(глава|часть|пролог|эпилог|книга|сцена|акт)/i;
+
   const sections = xmlDoc.querySelectorAll('body > section');
 
   if (sections.length > 0) {
@@ -1251,7 +1272,14 @@ async function parseFb2FromFile(file) {
       text = text.replace(/\s+/g, ' ').trim();
 
       if (text.length > 20) {
-        const sectionTitle = section.querySelector('title > p')?.textContent.trim();
+        let sectionTitle = section.querySelector('title > p')?.textContent.trim() || '';
+        
+        if (!hasSeenRealChapter && !chapterRegex.test(sectionTitle)) {
+          sectionTitle = 'Вступление';
+        } else {
+          hasSeenRealChapter = true;
+        }
+
         chapterTextsLocal.push({
           path: `fb2_section_${index}`,
           text: text,
@@ -1305,9 +1333,8 @@ function renderShelf() {
   if (library.length === 0) { emptyShelfMsg.style.display = 'block'; return; }
   emptyShelfMsg.style.display = 'none';
 
-  // === СОРТИРОВКА ===
   const sortMethod = sortSelect.value;
-  const sortedLibrary = [...library]; // Копируем, чтобы не ломать оригинал
+  const sortedLibrary = [...library];
 
   sortedLibrary.sort((a, b) => {
     if (sortMethod === 'date-desc') return parseInt(b.id) - parseInt(a.id);
@@ -1328,7 +1355,6 @@ function renderShelf() {
     const chunk = sortedLibrary.slice(i, i + 3);
 
     chunk.forEach((book, index) => {
-      // Находим реальный индекс книги в массиве library для удаления
       const globalIndex = library.findIndex(b => b.id === book.id);
       const card = document.createElement('div');
       card.className = 'book-card';
@@ -1373,13 +1399,11 @@ function renderShelf() {
   }
 }
 
-// Обработчик изменения сортировки
 sortSelect.addEventListener('change', () => {
   localStorage.setItem('shelfSort', sortSelect.value);
   renderShelf();
 });
 
-// Восстанавливаем сохраненную сортировку
 const savedSort = localStorage.getItem('shelfSort');
 if (savedSort) {
   sortSelect.value = savedSort;
@@ -1659,7 +1683,6 @@ playStopBtn.addEventListener('click', () => {
   }
 });
 
-// Обработчики для режима "Карман"
 pocketPlayBtn.addEventListener('click', () => {
   playStopBtn.click();
 });
@@ -1825,7 +1848,7 @@ fileInput.addEventListener('change', async (e) => {
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-window.APP_VERSION = "1.8"; // Меняйте эту цифру при обновлениях
+window.APP_VERSION = "1.9"; // Меняйте эту цифру при обновлениях
 fetchAppVersion();
 
 loadLibrary();
@@ -1837,7 +1860,20 @@ renderShelf();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker зарегистрирован!'))
+        .then(reg => {
+          // Проверяем обновления при возврате в приложение
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              reg.update();
+            }
+          });
+          // Перезагружаем страницу, если SW обновился
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          });
+        })
         .catch(err => console.log('Ошибка SW: ', err));
     });
   }
