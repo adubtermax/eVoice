@@ -14,6 +14,7 @@
     --surface: #1e1e1e;
     --text: #ffffff;
     --text-muted: #888888;
+    --accent: #00b894; /* Зеленый для таймера */
     --radius: 16px;
     --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
     
@@ -54,9 +55,22 @@
   }
   .header-top { display: flex; justify-content: space-between; align-items: center; }
   .header-title { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-  .header-icons { display: flex; gap: 15px; }
-  .icon-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 5px; }
-  .icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
+  
+  /* Стили для сортировки */
+  .sort-select {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: right;
+    padding: 5px;
+  }
+  .sort-select option { background: #1e1e1e; color: #fff; }
 
   .shelf-container {
     padding: 20px 15px 100px 15px;
@@ -232,6 +246,8 @@
     z-index: 10;
   }
   
+  .top-right-buttons { display: flex; gap: 10px; }
+
   .icon-box-btn {
     width: 48px;
     height: 48px;
@@ -261,6 +277,15 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     filter: drop-shadow(0 0 2px rgba(255,255,255,0.3));
+  }
+  
+  /* Активный таймер */
+  .icon-box-btn.timer-active {
+    color: var(--accent);
+    box-shadow: 
+      -6px -6px 12px rgba(0, 255, 184, 0.15), 
+      6px 6px 15px rgba(0, 0, 0, 1),
+      inset 0 2px 2px rgba(0, 255, 184, 0.2);
   }
 
   .player-center {
@@ -390,7 +415,7 @@
 
   #fileInput, #log { display: none; }
 
-  /* Невидимая кнопка для режима "Карман" */
+  /* Невидимая кнопка для режима "Карман" (Низ - Play/Stop) */
   .pocket-play-overlay {
     display: none;
     position: absolute;
@@ -403,6 +428,22 @@
     background: transparent;
     border: none;
     z-index: 999;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Невидимая кнопка по центру (Смена режима) */
+  .pocket-layout-overlay {
+    display: none;
+    position: absolute;
+    top: 10%;
+    bottom: 180px;
+    left: 10%;
+    right: 10%;
+    background: transparent;
+    border: none;
+    z-index: 998; 
     cursor: pointer;
     outline: none;
     -webkit-tap-highlight-color: transparent;
@@ -497,10 +538,9 @@
 
   #playerScreen.layout-pocket .player-center { display: none; }
   #playerScreen.layout-pocket .bottom-panel { display: none; }
-  #playerScreen.layout-pocket .player-top { justify-content: flex-end; padding-top: 20px; padding-right: 20px; }
-  #playerScreen.layout-pocket #backToShelfBtn { display: none; }
-  #playerScreen.layout-pocket #layoutToggleBtn { opacity: 0.5; }
+  #playerScreen.layout-pocket .player-top { display: none; }
   #playerScreen.layout-pocket .pocket-play-overlay { display: block; }
+  #playerScreen.layout-pocket .pocket-layout-overlay { display: block; }
 
   /* ============================================================
      АДАПТАЦИЯ ДЛЯ ПК
@@ -529,6 +569,13 @@
         <svg viewBox="0 0 24 24" style="width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2;"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         Библиотека
       </div>
+      <select id="sortSelect" class="sort-select">
+        <option value="date-desc">Сначала новые</option>
+        <option value="date-asc">Сначала старые</option>
+        <option value="title-asc">А-Я</option>
+        <option value="title-desc">Я-А</option>
+        <option value="type">По формату</option>
+      </select>
     </div>
   </div>
 
@@ -551,13 +598,22 @@
       <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
     </div>
     
-    <div class="icon-box-btn" id="layoutToggleBtn" title="Сменить вид">
-      <svg viewBox="0 0 24 24">
-        <rect x="3" y="3" width="7" height="9" rx="1"></rect>
-        <rect x="14" y="3" width="7" height="5" rx="1"></rect>
-        <rect x="14" y="12" width="7" height="9" rx="1"></rect>
-        <rect x="3" y="16" width="7" height="5" rx="1"></rect>
-      </svg>
+    <div class="top-right-buttons">
+      <div class="icon-box-btn" id="sleepTimerBtn" title="Таймер сна">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      
+      <div class="icon-box-btn" id="layoutToggleBtn" title="Сменить вид">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+          <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+          <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+        </svg>
+      </div>
     </div>
   </div>
 
@@ -615,7 +671,8 @@
     </div>
   </div>
 
-  <!-- Невидимая кнопка для режима "Карман" -->
+  <!-- Невидимые кнопки для режима "Карман" -->
+  <button id="pocketLayoutBtn" class="pocket-layout-overlay" title="Сменить режим"></button>
   <button id="pocketPlayBtn" class="pocket-play-overlay" title="Play/Stop"></button>
 </div>
 
@@ -653,12 +710,15 @@ const playIcon = document.getElementById('playIcon');
 const stopIcon = document.getElementById('stopIcon');
 const logEl = document.getElementById('log');
 const layoutToggleBtn = document.getElementById('layoutToggleBtn');
+const sleepTimerBtn = document.getElementById('sleepTimerBtn');
 const visualizer = document.getElementById('visualizer');
 const chapterTitleEl = document.getElementById('chapterTitle');
 const chapterCounterEl = document.getElementById('chapterCounter');
 const currentTextDisplay = document.getElementById('currentTextDisplay');
 const pocketPlayBtn = document.getElementById('pocketPlayBtn');
+const pocketLayoutBtn = document.getElementById('pocketLayoutBtn');
 const appVersionLabel = document.getElementById('appVersionLabel');
+const sortSelect = document.getElementById('sortSelect');
 
 // ============================================================
 //  СОСТОЯНИЕ
@@ -674,6 +734,8 @@ let isPlaying = false;
 let currentUtterance = null;
 let wakeLock = null;
 let chunkSeekTimer = null;
+let sleepTimerId = null;
+let sleepTimerState = 0; // 0=Off, 1=15m, 2=30m, 3=60m
 
 // ============================================================
 //  УТИЛИТЫ
@@ -684,15 +746,42 @@ function vibrate() {
   if (navigator.vibrate) navigator.vibrate(30);
 }
 
-// --- Получение версии из SW ---
-function fetchAppVersion() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    // Если SW уже контролирует страницу, мы можем попробовать узнать версию из кэша
-    // Но проще вывести версию, которую мы знаем в JS
-    appVersionLabel.textContent = window.APP_VERSION || "1.0";
-  } else {
-    appVersionLabel.textContent = window.APP_VERSION || "1.0";
+// --- Таймер сна ---
+function handleSleepTimer() {
+  vibrate();
+  sleepTimerState = (sleepTimerState + 1) % 4;
+  
+  if (sleepTimerId) {
+    clearTimeout(sleepTimerId);
+    sleepTimerId = null;
   }
+
+  if (sleepTimerState === 0) {
+    sleepTimerBtn.classList.remove('timer-active');
+    log('Таймер сна выключен');
+  } else {
+    let minutes = 0;
+    if (sleepTimerState === 1) minutes = 15;
+    if (sleepTimerState === 2) minutes = 30;
+    if (sleepTimerState === 3) minutes = 60;
+
+    sleepTimerBtn.classList.add('timer-active');
+    log(`Таймер сна установлен на ${minutes} мин.`);
+    
+    sleepTimerId = setTimeout(() => {
+      log('Таймер сна сработал. Останавливаем чтение.');
+      stopPlayback();
+      sleepTimerState = 0;
+      sleepTimerBtn.classList.remove('timer-active');
+    }, minutes * 60 * 1000);
+  }
+}
+
+sleepTimerBtn.addEventListener('click', handleSleepTimer);
+
+// --- Получение версии ---
+function fetchAppVersion() {
+  appVersionLabel.textContent = window.APP_VERSION || "1.0";
 }
 
 // --- Wake Lock ---
@@ -861,6 +950,45 @@ function extractChapterNumber(title, fallbackIndex) {
 }
 
 // ============================================================
+//  ГЕНЕРАЦИЯ ОБЛОЖКИ
+// ============================================================
+function generateFallbackCover(titleText, fileType) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 600;
+  const ctx = canvas.getContext('2d');
+
+  const hue = fileType === 'pdf' ? 0 : (fileType === 'fb2' ? 140 : 220);
+  const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+  gradient.addColorStop(0, `hsl(${hue}, 70%, 40%)`);
+  gradient.addColorStop(1, `hsl(${hue + 40}, 70%, 20%)`);
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 400, 600);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(20, 20, 360, 560);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let displayText = (titleText || 'Без названия').trim();
+  if (displayText === '') displayText = 'Без названия';
+  if (displayText.length > 20) displayText = displayText.substring(0, 18) + '...';
+  
+  ctx.fillText(displayText, 200, 300);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '20px sans-serif';
+  ctx.fillText(fileType.toUpperCase(), 200, 500);
+
+  return canvas.toDataURL('image/jpeg', 0.8);
+}
+
+// ============================================================
 //  ПАРСИНГ EPUB
 // ============================================================
 async function parseEpubFromArrayBuffer(arrayBuffer) {
@@ -1008,64 +1136,6 @@ async function parseEpubFromArrayBuffer(arrayBuffer) {
 // ============================================================
 //  ПАРСИНГ PDF
 // ============================================================
-function generatePdfCover(titleText) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 400;
-  canvas.height = 600;
-  const ctx = canvas.getContext('2d');
-
-  const hue = Math.floor(Math.random() * 360);
-  const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-  gradient.addColorStop(0, `hsl(${hue}, 70%, 40%)`);
-  gradient.addColorStop(1, `hsl(${hue + 40}, 70%, 20%)`);
-  
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 400, 600);
-
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(20, 20, 360, 560);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 36px "Segoe UI", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // Берем первые 15 символов, чтобы точно влезло
-  let displayText = titleText.trim();
-  if (displayText.length > 15) displayText = displayText.substring(0, 15) + '...';
-
-  const maxWidth = 300;
-  const lines = [];
-  let currentLine = '';
-  
-  displayText.split(' ').forEach(word => {
-    const testLine = currentLine + word + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && currentLine !== '') {
-      lines.push(currentLine.trim());
-      currentLine = word + ' ';
-    } else {
-      currentLine = testLine;
-    }
-  });
-  lines.push(currentLine.trim());
-
-  const lineHeight = 45;
-  const totalHeight = lines.length * lineHeight;
-  const startY = 300 - (totalHeight / 2);
-
-  lines.forEach((line, index) => {
-    ctx.fillText(line, 200, startY + (index * lineHeight) + (lineHeight / 2));
-  });
-
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = '20px sans-serif';
-  ctx.fillText('PDF', 200, 500);
-
-  return canvas.toDataURL('image/jpeg', 0.8);
-}
-
 async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const numPages = pdf.numPages;
@@ -1093,7 +1163,7 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
     rawTitle = 'PDF Документ';
   }
   
-  const coverBase64 = generatePdfCover(rawTitle);
+  const coverBase64 = generateFallbackCover(rawTitle, 'pdf');
   
   return {
     title: rawTitle,
@@ -1110,7 +1180,6 @@ async function parsePdfFromArrayBuffer(arrayBuffer, fileName) {
 async function parseFb2FromFile(file) {
   let fb2Text;
 
-  // Если это ZIP-архив, распаковываем его
   if (file.name.toLowerCase().endsWith('.zip')) {
     log('Обнаружен ZIP-контейнер. Распаковываем...');
     const arrayBuffer = await file.arrayBuffer();
@@ -1148,17 +1217,27 @@ async function parseFb2FromFile(file) {
   const title = titleEl ? titleEl.textContent.trim() : 'FB2 Книга';
   const author = authorEl ? `${authorEl.textContent.trim()} ${lastNameEl ? lastNameEl.textContent.trim() : ''}`.trim() : 'Неизвестный автор';
 
+  // --- Поиск обложки ---
   let coverBase64 = null;
-  const coverEl = xmlDoc.querySelector('coverpage > image');
+  const coverEl = xmlDoc.querySelector('coverpage image');
+  
   if (coverEl) {
-    const href = coverEl.getAttribute('xlink:href')?.replace('#', '');
+    let href = coverEl.getAttribute('xlink:href') || coverEl.getAttribute('href') || coverEl.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    
     if (href) {
-      const binaryEl = xmlDoc.getElementById(href);
+      href = href.replace('#', '').trim();
+      const binaryEl = xmlDoc.querySelector(`binary[id="${href}"]`);
+      
       if (binaryEl && binaryEl.textContent) {
         const contentType = binaryEl.getAttribute('content-type') || 'image/jpeg';
-        coverBase64 = `data:${contentType};base64,${binaryEl.textContent.trim()}`;
+        const base64Data = binaryEl.textContent.replace(/\s/g, '');
+        coverBase64 = `data:${contentType};base64,${base64Data}`;
       }
     }
+  }
+
+  if (!coverBase64) {
+    coverBase64 = generateFallbackCover(title, 'fb2');
   }
 
   const chapterTextsLocal = [];
@@ -1226,13 +1305,31 @@ function renderShelf() {
   if (library.length === 0) { emptyShelfMsg.style.display = 'block'; return; }
   emptyShelfMsg.style.display = 'none';
 
-  for (let i = 0; i < library.length; i += 3) {
+  // === СОРТИРОВКА ===
+  const sortMethod = sortSelect.value;
+  const sortedLibrary = [...library]; // Копируем, чтобы не ломать оригинал
+
+  sortedLibrary.sort((a, b) => {
+    if (sortMethod === 'date-desc') return parseInt(b.id) - parseInt(a.id);
+    if (sortMethod === 'date-asc') return parseInt(a.id) - parseInt(b.id);
+    if (sortMethod === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+    if (sortMethod === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+    if (sortMethod === 'type') {
+      const typeA = a.fileType || 'epub';
+      const typeB = b.fileType || 'epub';
+      return typeA.localeCompare(typeB);
+    }
+    return 0;
+  });
+
+  for (let i = 0; i < sortedLibrary.length; i += 3) {
     const row = document.createElement('div');
     row.className = 'shelf-row';
-    const chunk = library.slice(i, i + 3);
+    const chunk = sortedLibrary.slice(i, i + 3);
 
     chunk.forEach((book, index) => {
-      const globalIndex = i + index;
+      // Находим реальный индекс книги в массиве library для удаления
+      const globalIndex = library.findIndex(b => b.id === book.id);
       const card = document.createElement('div');
       card.className = 'book-card';
       
@@ -1274,6 +1371,20 @@ function renderShelf() {
     });
     bookshelf.appendChild(row);
   }
+}
+
+// Обработчик изменения сортировки
+sortSelect.addEventListener('change', () => {
+  localStorage.setItem('shelfSort', sortSelect.value);
+  renderShelf();
+});
+
+// Восстанавливаем сохраненную сортировку
+const savedSort = localStorage.getItem('shelfSort');
+if (savedSort) {
+  sortSelect.value = savedSort;
+} else {
+  sortSelect.value = 'date-desc';
 }
 
 // ============================================================
@@ -1548,9 +1659,15 @@ playStopBtn.addEventListener('click', () => {
   }
 });
 
-// Невидимая кнопка для кармана
+// Обработчики для режима "Карман"
 pocketPlayBtn.addEventListener('click', () => {
   playStopBtn.click();
+});
+
+pocketLayoutBtn.addEventListener('click', () => {
+  vibrate();
+  currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
+  applyLayout(currentLayoutIndex);
 });
 
 prevChapterBtn.addEventListener('click', () => {
@@ -1708,7 +1825,7 @@ fileInput.addEventListener('change', async (e) => {
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-window.APP_VERSION = "0.5.5"; // Меняйте эту цифру при обновлениях
+window.APP_VERSION = "1.8"; // Меняйте эту цифру при обновлениях
 fetchAppVersion();
 
 loadLibrary();
