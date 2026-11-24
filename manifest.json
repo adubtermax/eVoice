@@ -1,5 +1,5 @@
 {
-  "name": "Voice EPUB Reader",
+  "name": "eVoice",
   "short_name": "eVoice",
   "description": "Читалка EPUB с озвучиванием на русском языке",
   "start_url": "./index.html",
